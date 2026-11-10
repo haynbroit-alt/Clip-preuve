@@ -80,6 +80,7 @@
       }
     },
     "statut": {"enum": ["PROUVÉ", "INCONNU"]},
+    "certifie": {"type": "boolean"},
     "avertissement": {"type": ["string", "null"]},
     "iterations_falsificateur": {"type": "integer", "minimum": 1},
     "recadrage": {"type": "object"},

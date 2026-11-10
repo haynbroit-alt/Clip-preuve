@@ -54,7 +54,7 @@ def test_bornes_du_falsificateur_vont_au_monteur_puis_a_la_carte(tmp_path, monke
     meta, words, sents, cand, verdict = _monde()
     seen = {}
 
-    monkeypatch.setattr(orchestrator.transcripteur, "run_agent", lambda run, src: (meta, words, []))
+    monkeypatch.setattr(orchestrator.transcripteur, "run_agent", lambda run, src, align="whisper": (meta, words, []))
 
     def chercheur(run, words, sil, top=6, exclude=()):
         seen["exclude"] = list(exclude)
@@ -91,11 +91,69 @@ def test_bornes_du_falsificateur_vont_au_monteur_puis_a_la_carte(tmp_path, monke
     assert json.loads((run / "preuve.json").read_text(encoding="utf-8"))["clip"]["fichier"] == "clip_2.mp4"
 
 
+def test_conflit_n_appelle_pas_le_monteur(tmp_path, monkeypatch):
+    meta, words, sents, cand, verdict = _monde()
+    verdict = {
+        **verdict,
+        "statut": "INCONNU",
+        "final": {**FINAL, "contredit_apres": {"verdict": "CONFLIT", "preuve": "corrigé", "source": "garde-fou"}},
+    }
+    monkeypatch.setattr(orchestrator.transcripteur, "run_agent", lambda run, src, align="whisper": (meta, words, []))
+    monkeypatch.setattr(orchestrator.chercheur, "run_agent", lambda *a, **k: (sents, [cand]))
+    monkeypatch.setattr(orchestrator.juge, "run_agent", lambda *a, **k: [cand])
+    monkeypatch.setattr(orchestrator.falsificateur, "run_agent", lambda *a, **k: (verdict, cand, [verdict]))
+    appels = {"n": 0}
+
+    def monteur(*a, **k):
+        appels["n"] += 1
+        raise AssertionError("le monteur ne doit pas tourner")
+
+    monkeypatch.setattr(orchestrator.monteur, "run_agent", monteur)
+    with pytest.raises(RuntimeError, match="CONFLIT"):
+        orchestrator.main("https://example.com/v", str(tmp_path / "run"))
+    assert appels["n"] == 0
+    assert not (tmp_path / "run" / "clip.mp4").exists()
+
+
+def test_candidat_suivant_non_certifie(tmp_path, monkeypatch):
+    meta, words, sents, cand, verdict = _monde()
+    autre = {
+        **cand,
+        "id": "c2",
+        "s": 40.0,
+        "e": 70.0,
+        "juge": {**cand["juge"], "raison": "second"},
+    }
+    monkeypatch.setattr(orchestrator.transcripteur, "run_agent", lambda run, src, align="whisper": (meta, words, []))
+    monkeypatch.setattr(orchestrator.chercheur, "run_agent", lambda *a, **k: (sents, [cand, autre]))
+    monkeypatch.setattr(orchestrator.juge, "run_agent", lambda *a, **k: [cand, autre])
+    monkeypatch.setattr(orchestrator.falsificateur, "run_agent", lambda *a, **k: (verdict, cand, [verdict]))
+    monkeypatch.setattr(
+        orchestrator.falsificateur,
+        "falsify",
+        lambda *a, **k: {"final": dict(FINAL), "s": 40.0, "e": 55.0, "i": 0, "j": 0},
+    )
+
+    def monteur(run, meta, words, s, e, name="clip.mp4"):
+        return os.path.join(run, name), {"methode": "centre (test)"}
+
+    monkeypatch.setattr(orchestrator.monteur, "run_agent", monteur)
+    run = tmp_path / "run"
+    _path, card = orchestrator.main("https://example.com/v", str(run), candidats=1)
+    assert card["certifie"] is True
+    extra = json.loads((run / "preuve_c2.json").read_text(encoding="utf-8"))
+    assert extra["certifie"] is False
+    assert extra["candidat"] == "c2"
+    assert "00:00:40:00" in (run / "clip.edl").read_text(encoding="utf-8")
+    assert "fcpxml" in (run / "clip.fcpxml").read_text(encoding="utf-8")
+    assert json.loads((run / "preuve.json").read_text(encoding="utf-8"))["certifie"] is True
+
+
 def test_echec_ecrit_dans_progress(tmp_path, monkeypatch):
     monkeypatch.setattr(
         orchestrator.transcripteur,
         "run_agent",
-        lambda run, src: (_ for _ in ()).throw(RuntimeError("boom sélection")),
+        lambda run, src, align="whisper": (_ for _ in ()).throw(RuntimeError("boom sélection")),
     )
     run = tmp_path / "run"
     with pytest.raises(RuntimeError, match="boom sélection"):

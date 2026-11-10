@@ -22,6 +22,10 @@ Paste a video link or file (up to 3 hours). Clip-preuve returns one 20–90s ver
 Optionnel : `export OPENROUTER_API_KEY=...` pour un modèle OpenRouter à la place. La clé reste dans l'environnement, elle n'est ni affichée ni journalisée.
 
 Régénérer sans refaire la transcription : `./clip "<lien>" --regenerer`.
+Le dossier de run est l'empreinte du fichier (`runs/<hash>/`) : un échec reprend la transcription déjà écrite.
+Un clip dont le Falsificateur contient un CONFLIT n'est pas exporté.
+`./clip "<lien>" --candidats 2` ajoute les candidats suivants, chacun avec une carte marquée non certifiée, plus `clip.edl` et `clip.fcpxml`.
+`./clip "<lien>" --align whisperx` aligne avec wav2vec2 français si le paquet `whisperx` est installé.
 
 ![Démo : un lien devient un clip vertical avec sa carte de preuve](docs/demo.gif)
 

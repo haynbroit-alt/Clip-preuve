@@ -18,6 +18,7 @@ import subprocess
 from typing import Any, cast
 
 from .common import jsave, progress, sh, ytdlp
+from .locuteur import integrer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FACE_MODEL = os.path.join(ROOT, "llm", "blaze_face_short_range.tflite")
@@ -441,5 +442,6 @@ def run_agent(
     )
     crop["mots_sous_titres"] = nwords
     crop["rendu_s"] = round(_t.monotonic() - T, 1)
+    integrer(crop, [], [])
     jsave(os.path.join(run, "crop.json"), crop)
     return out, crop

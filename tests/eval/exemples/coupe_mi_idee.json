@@ -1,0 +1,10 @@
+{
+  "video": "synthetique-coupe-mi-idee",
+  "idees": [
+    {"id": "i1", "debut_s": 0.0, "fin_s": 20.0},
+    {"id": "i2", "debut_s": 20.0, "fin_s": 40.0}
+  ],
+  "clips": [
+    {"fichier": "clip.mp4", "debut_s": 5.0, "fin_s": 15.0}
+  ]
+}

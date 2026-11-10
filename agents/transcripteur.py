@@ -15,7 +15,11 @@ import os
 import re
 from typing import Any, cast
 
+from .alignement import aligner
 from .common import jload, jsave, progress, sh, timed, ytdlp
+from .log import logger
+from .reprise import empreinte, noter
+from .vad import choisir_mots, vad_ecrase
 
 MAX_SEC = 3 * 3600 + 300
 CHUNK = 600
@@ -74,13 +78,46 @@ def ingest(run: str, src: str) -> dict[str, Any]:
         sh(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", wav]).stdout.strip()
     )
     jsave(os.path.join(run, "source.json"), meta)
+    noter(run, "ingestion", empreinte(wav))
     return meta
 
 
-def transcribe(run: str, meta: dict[str, Any], lang: str = "fr") -> list[dict[str, Any]]:
+def _decoder(
+    model: Any, chemin: str, lang: str, beam: int, offset: float, vad: bool
+) -> tuple[list[dict[str, Any]], int]:
+    segs, _info = model.transcribe(
+        chemin,
+        language=lang,
+        beam_size=beam,
+        word_timestamps=True,
+        vad_filter=vad,
+        condition_on_previous_text=False,
+    )
+    segs = list(segs)
+    mots: list[dict[str, Any]] = []
+    for seg in segs:
+        for w in seg.words or []:
+            if w.word.strip():
+                mots.append({"w": w.word.strip(), "s": round(w.start + offset, 3), "e": round(w.end + offset, 3)})
+    return mots, len(segs)
+
+
+def transcribe(run: str, meta: dict[str, Any], lang: str = "fr", align: str = "whisper") -> list[dict[str, Any]]:
     out = os.path.join(run, "words.json")
-    if os.path.exists(out):
+    aligne = os.path.join(run, "words_whisperx.json")
+    if align == "whisperx" and os.path.exists(aligne):
+        noter(run, "alignement")
+        return cast(list[dict[str, Any]], jload(aligne))
+    if os.path.exists(out) and align != "whisperx":
+        logger().info("reprise", extra={"etape": "transcription", "run": run})
+        noter(run, "transcription")
         return cast(list[dict[str, Any]], jload(out))
+    if os.path.exists(out) and align == "whisperx":
+        mots = cast(list[dict[str, Any]], jload(out))
+        mots = aligner(mots, os.path.join(run, "audio.wav"), lang, align)
+        jsave(aligne, mots)
+        noter(run, "alignement")
+        return mots
     from faster_whisper import WhisperModel
 
     model = WhisperModel(
@@ -114,24 +151,17 @@ def transcribe(run: str, meta: dict[str, Any], lang: str = "fr") -> list[dict[st
             )
             cdur = min(CHUNK, dur - i * CHUNK)
             ws: list[dict[str, Any]] = []
-            for beam in (
-                1,
-                5,
-            ):  # garde-fou : < 60 mots/min sur un chunk parlé = transcription trouée -> 2e passe beam 5
-                segs, _ = model.transcribe(
-                    cw,
-                    language=lang,
-                    beam_size=beam,
-                    word_timestamps=True,
-                    vad_filter=True,
-                    condition_on_previous_text=False,
-                )
-                w2 = [
-                    {"w": w.word.strip(), "s": round(w.start + i * CHUNK, 3), "e": round(w.end + i * CHUNK, 3)}
-                    for s in segs
-                    for w in (s.words or [])
-                    if w.word.strip()
-                ]
+            for beam in (1, 5):  # garde-fou : < 60 mots/min -> 2e passe beam 5
+                brut, nseg = _decoder(model, cw, lang, beam, i * CHUNK, True)
+                if vad_ecrase(cdur, brut, nseg):
+                    secours, n2 = _decoder(model, cw, lang, beam, i * CHUNK, False)
+                    w2, _sans = choisir_mots(cdur, brut, nseg, secours)
+                    logger().warning(
+                        "VAD retiré, nouvel essai sans filtre",
+                        extra={"chunk": i, "segments": nseg, "segments_sans": n2},
+                    )
+                else:
+                    w2 = brut
                 if len(w2) > len(ws):
                     ws = w2
                 if len(ws) >= 60 * cdur / 60 or cdur < 60:
@@ -142,9 +172,14 @@ def transcribe(run: str, meta: dict[str, Any], lang: str = "fr") -> list[dict[st
         progress(run, "transcription", 5 + int(45 * (i + 1) / n), f"chunk {i + 1}/{n}")
     if not words:
         raise RuntimeError("ÉCHEC : aucun mot transcrit")
+    if align == "whisperx":
+        words = aligner(words, os.path.join(run, "audio.wav"), lang, align)
+        jsave(aligne, words)
+        noter(run, "alignement")
     jsave(out, words)
     with open(os.path.join(run, "transcript.txt"), "w", encoding="utf-8") as f:
         f.write(" ".join(w["w"] for w in words))
+    noter(run, "transcription")
     return words
 
 
@@ -179,12 +214,14 @@ def silences(run: str) -> list[list[float]]:
     return res
 
 
-def run_agent(run: str, src: str) -> tuple[dict[str, Any], list[dict[str, Any]], list[list[float]]]:
+def run_agent(
+    run: str, src: str, align: str = "whisper"
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[list[float]]]:
     with timed(run, "ingestion"):
         progress(run, "ingestion", 2, src)
         meta = ingest(run, src)
     with timed(run, "transcription"):
-        words = transcribe(run, meta)
+        words = transcribe(run, meta, align=align)
     with timed(run, "silencedetect"):
         sil = silences(run)
     return meta, words, sil

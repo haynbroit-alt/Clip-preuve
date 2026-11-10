@@ -45,6 +45,7 @@ def run_agent(
     cand: dict[str, Any],
     crop: dict[str, Any],
     clip_path: str,
+    certifie: bool = True,
 ) -> dict[str, Any]:
     s, e = verdict["s"], verdict["e"]
     ws = [w["w"] for w in words if s - 0.05 <= w["s"] and w["e"] <= e + 0.05]
@@ -73,6 +74,7 @@ def run_agent(
         "bornes_ajustees": (round(cand["s"], 2), round(cand["e"], 2)) != (round(s, 2), round(e, 2)),
         "falsificateur": verdict["final"],
         "statut": verdict["statut"],
+        "certifie": certifie,
         "avertissement": verdict.get("avertissement"),
         "iterations_falsificateur": verdict["iteration"],
         "recadrage": crop,
@@ -82,7 +84,12 @@ def run_agent(
     }
     jsave(os.path.join(run, "preuve.json"), card)
     F = card["falsificateur"]
-    md = [f"# Carte de preuve — statut : {card['statut']}", ""]
+    md = [
+        f"# Carte de preuve — statut : {card['statut']}",
+        "",
+        f"**Certifié** : {'oui' if card['certifie'] else 'non'}",
+        "",
+    ]
     if card["avertissement"]:
         md += [f"> ⚠️ {card['avertissement']}", ""]
     md += [

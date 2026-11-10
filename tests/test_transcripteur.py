@@ -43,7 +43,8 @@ def _faux_whisper(beams_out):
             )
 
         def transcribe(self, path, **kw):
-            lot = beams_out[len([b for b in beams if "beam" in b])]
+            index = len([b for b in beams if "beam" in b])
+            lot = beams_out[min(index, len(beams_out) - 1)]
             # compte les appels transcribe séparément
             beams.append({"beam": kw["beam_size"]})
             words = [Word(w, s, e) for w, s, e in lot]
@@ -55,7 +56,8 @@ def _faux_whisper(beams_out):
 
 
 def test_transcrit_avec_whisper_simule_et_repasse_en_beam_5(tmp_path, monkeypatch):
-    mod, beams = _faux_whisper([[], [(" bonjour", 1.0, 1.4)]])
+    # VAD vide -> retry sans VAD, puis beam 5 car le chunk de 120 s reste trop troué.
+    mod, beams = _faux_whisper([[], [(" bonjour", 0.0, 100.0)], [(" bonjour", 0.0, 100.0)]])
     monkeypatch.setitem(sys.modules, "faster_whisper", mod)
 
     def fake_sh(cmd, **kw):
@@ -67,8 +69,8 @@ def test_transcrit_avec_whisper_simule_et_repasse_en_beam_5(tmp_path, monkeypatc
 
     monkeypatch.setattr(transcripteur, "sh", fake_sh)
     words = transcripteur.transcribe(str(tmp_path), {"duration": 120.0})
-    assert words == [{"w": "bonjour", "s": 1.0, "e": 1.4}]
-    assert [b["beam"] for b in beams if "beam" in b] == [1, 5]
+    assert words == [{"w": "bonjour", "s": 0.0, "e": 100.0}]
+    assert [b["beam"] for b in beams if "beam" in b] == [1, 1, 5]
     init = next(b for b in beams if "model" in b)
     assert init["model"] == "small"
     assert init["device"] == "cpu"

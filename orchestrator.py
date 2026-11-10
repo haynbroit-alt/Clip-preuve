@@ -11,11 +11,14 @@ import argparse
 import hashlib
 import os
 import traceback
-from typing import Any
+from typing import Any, cast
 
 from agents import chercheur, falsificateur, greffier, juge, monteur, transcripteur
 from agents.common import jload, jsave, progress, timed
+from agents.edl import edl, fcpxml
+from agents.livraison import CRITERES, exporter, livraison_autorisee
 from agents.log import logger
+from agents.reprise import dossier_pour
 
 RUNS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs")
 
@@ -24,13 +27,91 @@ def run_id(src: str) -> str:
     return hashlib.sha1(src.encode()).hexdigest()[:10]
 
 
-def main(src: str, run: str | None = None, regen: bool = False) -> tuple[str, dict[str, Any]]:
-    run = run or os.path.join(RUNS, run_id(src))
+def _statut_hors_boucle(final: dict[str, Any]) -> tuple[str, str | None]:
+    verdicts = [final[nom]["verdict"] for nom in CRITERES if nom in final]
+    if any(v == "CONFLIT" for v in verdicts):
+        return "INCONNU", None
+    if verdicts and all(v == "PROUVÉ" for v in verdicts):
+        return "PROUVÉ", None
+    return "INCONNU", "Aucun CONFLIT trouvé, mais au moins un critère non prouvé (INCONNU)."
+
+
+def _ecrire_montage(
+    run: str,
+    meta: dict[str, Any],
+    words: list[dict[str, Any]],
+    verdict: dict[str, Any],
+    nom: str,
+) -> tuple[str, dict[str, Any]]:
+    def ecrire() -> tuple[str, dict[str, Any]]:
+        return monteur.run_agent(run, meta, words, verdict["s"], verdict["e"], nom)
+
+    return cast(tuple[str, dict[str, Any]], exporter(verdict, ecrire))
+
+
+def _candidats(
+    run: str,
+    meta: dict[str, Any],
+    words: list[dict[str, Any]],
+    sents: list[dict[str, Any]],
+    ranked: list[dict[str, Any]],
+    choisi: str,
+    n: int,
+) -> list[dict[str, Any]]:
+    if n <= 0:
+        return []
+    cartes: list[dict[str, Any]] = []
+    for cand in ranked:
+        if cand["id"] == choisi or len(cartes) >= n:
+            continue
+        brut = falsificateur.falsify(run, sents, int(cand["i"]), int(cand["j"]), 1)
+        statut, avertissement = _statut_hors_boucle(brut["final"])
+        verdict = {
+            **brut,
+            "statut": statut,
+            "avertissement": avertissement,
+            "iteration": 1,
+        }
+        if not livraison_autorisee(verdict):
+            logger().info("candidat non livré", extra={"candidat": cand["id"], "raison": "CONFLIT"})
+            continue
+        nom = f"candidat_{cand['id']}.mp4"
+        _clip, crop = _ecrire_montage(run, meta, words, verdict, nom)
+        card = greffier.run_agent(run, meta, words, verdict, cand, crop, _clip, certifie=False)
+        jsave(os.path.join(run, f"preuve_{cand['id']}.json"), card)
+        cartes.append(card)
+    return cartes
+
+
+def _timeline(run: str, meta: dict[str, Any], cartes: list[dict[str, Any]]) -> None:
+    clips = [
+        {
+            "debut_s": c["clip"]["debut_s"],
+            "fin_s": c["clip"]["fin_s"],
+            "nom": c["clip"]["fichier"],
+            "src": meta.get("src", ""),
+        }
+        for c in cartes
+    ]
+    with open(os.path.join(run, "clip.edl"), "w", encoding="utf-8") as handle:
+        handle.write(edl(clips))
+    with open(os.path.join(run, "clip.fcpxml"), "w", encoding="utf-8") as handle:
+        handle.write(fcpxml(clips))
+
+
+def main(
+    src: str,
+    run: str | None = None,
+    regen: bool = False,
+    align: str = "whisper",
+    candidats: int = 0,
+) -> tuple[str, dict[str, Any]]:
+    run = run or dossier_pour(RUNS, src)
     os.makedirs(run, exist_ok=True)
     with open(os.path.join(run, "src.txt"), "w") as f:
         f.write(src)
     try:
-        meta, words, sil = transcripteur.run_agent(run, src)
+        meta, words, sil = transcripteur.run_agent(run, src, align=align)
         hist = jload(os.path.join(run, "livres.json"), [])
         n = len(hist) + 1 if regen else 1
         if not regen:
@@ -44,8 +125,16 @@ def main(src: str, run: str | None = None, regen: bool = False) -> tuple[str, di
             verdict, cand, _ = falsificateur.run_agent(run, sents, ranked)
         name = "clip.mp4" if n == 1 else f"clip_{n}.mp4"
         with timed(run, "monteur"):
-            clip, crop = monteur.run_agent(run, meta, words, verdict["s"], verdict["e"], name)
-        card = greffier.run_agent(run, meta, words, verdict, cand, crop, clip)
+            clip, crop = _ecrire_montage(run, meta, words, verdict, name)
+        card = greffier.run_agent(run, meta, words, verdict, cand, crop, clip, certifie=True)
+        md_path = os.path.join(run, "preuve.md")
+        with open(md_path, encoding="utf-8") as handle:
+            md_certifie = handle.read()
+        extras = _candidats(run, meta, words, sents, ranked, cand["id"], candidats)
+        jsave(os.path.join(run, "preuve.json"), card)
+        with open(md_path, "w", encoding="utf-8") as handle:
+            handle.write(md_certifie)
+        _timeline(run, meta, [card, *extras])
         if n > 1:
             os.replace(os.path.join(run, "preuve.json"), os.path.join(run, f"preuve_{n}.json"))
             os.replace(os.path.join(run, "preuve.md"), os.path.join(run, f"preuve_{n}.md"))
@@ -68,8 +157,10 @@ if __name__ == "__main__":  # pragma: no cover
     ap.add_argument("src")
     ap.add_argument("--run")
     ap.add_argument("--regenerer", action="store_true")
+    ap.add_argument("--align", choices=["whisper", "whisperx"], default="whisper")
+    ap.add_argument("--candidats", type=int, default=0)
     a = ap.parse_args()
-    r, c = main(a.src, a.run, a.regenerer)
+    r, c = main(a.src, a.run, a.regenerer, a.align, a.candidats)
     print(
         f"\nCLIP : {os.path.join(r, c['clip']['fichier'])}\n"
         f"PREUVE : {os.path.join(r, 'preuve.md')}\nSTATUT : {c['statut']}"

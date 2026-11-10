@@ -30,29 +30,40 @@ TXT = [
  "Dormir huit heures après une séance difficile change vraiment la progression sur trois mois.",
  "Enfin, buvez régulièrement pendant la journée, pas seulement pendant la course.",
 ]
-t, sents = 0.0, []
-for x in TXT:
-    d = max(4.0, len(x.split()) * 0.42)  # ~2,4 mots/s
-    sents.append({"s": round(t, 2), "e": round(t + d, 2), "text": x, "q": x.endswith("?")}); t += d + 0.6
+def main():
+    t, sents = 0.0, []
+    for x in TXT:
+        d = max(4.0, len(x.split()) * 0.42)  # ~2,4 mots/s
+        sents.append({"s": round(t, 2), "e": round(t + d, 2), "text": x, "q": x.endswith("?")})
+        t += d + 0.6
 
-run = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trap_run"); os.makedirs(run, exist_ok=True)
-open(os.path.join(run, "llm_calls.jsonl"), "w").close()
-res = {}
-A = F.falsify(run, sents, 7, 10, 1)       # s'arrête avant « c'est faux »
-B = F.falsify(run, sents, 7, 12, 2)       # inclut la correction + la consigne
-for name, r in (("A_avant_correction", A), ("B_avec_correction", B)):
-    res[name] = {"bornes_s": [r["s"], r["e"]], "duree_s": round(r["e"] - r["s"], 1),
-                 "llm_seul": r["llm_derive"],
-                 "garde_fou": {k: v["verdict"] for k, v in r["garde_fou"].items() if k != "k"},
-                 "final": {k: v["verdict"] for k, v in r["final"].items()}}
-ranked = [{"id": "A", "i": 7, "j": 10, "score": 9.0}]
-v, c, log = F.run_agent(run, sents, ranked)
-res["C_boucle"] = {"iterations": len(log), "bornes_finales_phrases": [v["i"], v["j"]], "statut": v["statut"],
-                   "inclut_correction": v["j"] >= 11, "actions": [r.get("action") for r in log]}
-okA = res["A_avant_correction"]["final"]["contredit_apres"] == "CONFLIT"
-okB = res["B_avec_correction"]["final"]["contredit_apres"] != "CONFLIT"
-res["RESULTAT"] = {"A_rejete": "PROUVÉ" if okA else "ÉCHEC", "B_non_rejete_pour_contradiction": "PROUVÉ" if okB else "ÉCHEC",
-                   "A_rejete_par_LLM_seul": res["A_avant_correction"]["llm_seul"]["contredit_apres"] == "CONFLIT",
-                   "C_bornes_etendues_jusqua_correction": "PROUVÉ" if res["C_boucle"]["inclut_correction"] else "ÉCHEC"}
-json.dump(res, open(os.path.join(run, "resultat.json"), "w"), ensure_ascii=False, indent=2)
-print(json.dumps(res, ensure_ascii=False, indent=2))
+    run = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trap_run")
+    os.makedirs(run, exist_ok=True)
+    open(os.path.join(run, "llm_calls.jsonl"), "w").close()
+    res = {}
+    A = F.falsify(run, sents, 7, 10, 1)       # s'arrête avant « c'est faux »
+    B = F.falsify(run, sents, 7, 12, 2)       # inclut la correction + la consigne
+    for name, r in (("A_avant_correction", A), ("B_avec_correction", B)):
+        res[name] = {"bornes_s": [r["s"], r["e"]], "duree_s": round(r["e"] - r["s"], 1),
+                     "llm_seul": r["llm_derive"],
+                     "garde_fou": {k: v["verdict"] for k, v in r["garde_fou"].items() if k != "k"},
+                     "final": {k: v["verdict"] for k, v in r["final"].items()}}
+    ranked = [{"id": "A", "i": 7, "j": 10, "score": 9.0}]
+    v, c, log = F.run_agent(run, sents, ranked)
+    res["C_boucle"] = {"iterations": len(log), "bornes_finales_phrases": [v["i"], v["j"]], "statut": v["statut"],
+                       "inclut_correction": v["j"] >= 11, "actions": [r.get("action") for r in log]}
+    okA = res["A_avant_correction"]["final"]["contredit_apres"] == "CONFLIT"
+    okB = res["B_avec_correction"]["final"]["contredit_apres"] != "CONFLIT"
+    res["RESULTAT"] = {
+        "A_rejete": "PROUVÉ" if okA else "ÉCHEC",
+        "B_non_rejete_pour_contradiction": "PROUVÉ" if okB else "ÉCHEC",
+        "A_rejete_par_LLM_seul": res["A_avant_correction"]["llm_seul"]["contredit_apres"] == "CONFLIT",
+        "C_bornes_etendues_jusqua_correction": "PROUVÉ" if res["C_boucle"]["inclut_correction"] else "ÉCHEC",
+    }
+    with open(os.path.join(run, "resultat.json"), "w", encoding="utf-8") as f:
+        json.dump(res, f, ensure_ascii=False, indent=2)
+    print(json.dumps(res, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()

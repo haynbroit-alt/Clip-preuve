@@ -1,55 +1,76 @@
-# Clip+Preuve 🎬✅
+# Clip-preuve
 
-**Un lien → UN clip vertical (20-90 s) → avec sa preuve.**
-Pas 20 clips moyens : le meilleur moment, et un « Falsificateur » qui essaie de le casser avant de vous le donner.
-Si aucun moment ne tient, l'outil **le dit** au lieu de faire semblant.
+[![CI](https://github.com/haynbroit-alt/Clip-preuve/actions/workflows/ci.yml/badge.svg)](https://github.com/haynbroit-alt/Clip-preuve/actions/workflows/ci.yml)
 
-![démo](docs/demo.gif)
+Un lien ou un fichier vidéo (jusqu'à 3 h) entre, **un seul** clip vertical de 20 à 90 secondes sort.
+Avec le clip, une carte de preuve : timestamps, citations exactes de début et de fin, raison du choix.
+Avant de le rendre, un Falsificateur essaie de le casser — hors contexte, info préalable, contredit juste après, coupé en pleine idée — et marque chaque test **PROUVÉ**, **INCONNU** ou **CONFLIT**.
 
-## Utilisation (2 commandes)
+## English
+
+Paste a video link or file (up to 3 hours). Clip-preuve returns one 20–90s vertical clip and a proof card (timestamps, exact opening and closing quotes, and why this moment). A separate Falsificateur pass tries to break the clip first. Run `./install.sh` once, then `./clip "<url>"`, or `./clip --ui` for the local web page.
+
+## Utilisation
 
 ```bash
-./install.sh                                        # une seule fois (Linux, ffmpeg + node conseillés)
-./clip "https://www.youtube.com/watch?v=..."        # → runs/<id>/clip.mp4 + preuve.md
+./install.sh                                  # une fois (Linux, ffmpeg, Python 3.10+)
+./clip "https://www.youtube.com/watch?v=..."  # runs/<id>/clip.mp4 + preuve.md
+./clip --ui                                   # http://127.0.0.1:8000
 ```
 
-Interface web : `./clip --ui` puis ouvrez http://127.0.0.1:8000 — un champ, un bouton, une barre de progression,
-la vidéo, « Pourquoi ce moment », et **Régénérer** (gratuit : la transcription est réutilisée).
+`./install.sh` prépare le venv, llama.cpp et le modèle local (Qwen2.5-7B, CPU, 0 € d'API).
+Optionnel : `export OPENROUTER_API_KEY=...` pour un modèle OpenRouter à la place. La clé reste dans l'environnement, elle n'est ni affichée ni journalisée.
 
-![interface](docs/interface.png)
+Régénérer sans refaire la transcription : `./clip "<lien>" --regenerer`.
 
-**0 € :** tout tourne en local sur le CPU (faster-whisper + Qwen2.5-7B via llama.cpp). Aucune clé, aucun compte.
-Optionnel : `export OPENROUTER_API_KEY=...` pour utiliser un modèle `:free` d'OpenRouter à la place.
+![Démo : un lien devient un clip vertical avec sa carte de preuve](docs/demo.gif)
 
-## La carte de preuve
+L'interface : un champ, un bouton, la progression, la vidéo, « Pourquoi ce moment », et Régénérer.
 
-Chaque clip sort avec `preuve.json` + `preuve.md` : timestamps, citation exacte de début et de fin,
-raison du choix, notes du juge, et verdict du Falsificateur sur 4 tests (**PROUVÉ / INCONNU / CONFLIT**) :
-hors contexte ? besoin d'une info donnée avant ? contredit juste après ? coupé en pleine idée ?
-Les citations de « correction » doivent exister mot pour mot dans les 60 s qui suivent, sinon le verdict reste INCONNU.
+![Interface web](docs/interface.png)
 
-Exemple réel : [docs/exemple_preuve.md](docs/exemple_preuve.md) · test piège : [docs/test_piege_resultat.json](docs/test_piege_resultat.json)
+## Carte de preuve
 
-## Sous le capot : 6 agents + 1 orchestrateur
+Chaque run écrit `preuve.json` et `preuve.md`. Les citations sont les mots de la transcription, pas une réécriture du modèle. Les quatre tests du Falsificateur y figurent un par un. Si rien ne tient, le statut est **INCONNU** et l'avertissement est en tête.
 
-| Agent | Fichier | Skill (prompt / rôle) |
-|---|---|---|
-| Transcripteur | `agents/transcripteur.py` | `skills/transcripteur.md` |
-| Chercheur de candidats | `agents/chercheur.py` | `skills/chercheur.md` |
-| Juge (LLM, JSON strict) | `agents/juge.py` | `skills/juge.md` |
-| Falsificateur (LLM séparé) | `agents/falsificateur.py` | `skills/falsificateur.md` |
-| Monteur (9:16, visage, sous-titres) | `agents/monteur.py` | `skills/monteur.md` |
-| Greffier (carte de preuve, coût) | `agents/greffier.py` | `skills/greffier.md` |
+- Exemple réel (conflit restant) : [docs/exemple_preuve.md](docs/exemple_preuve.md)
+- Exemple sans conflit, avec un critère encore inconnu : [docs/exemple_preuve_sans_conflit.md](docs/exemple_preuve_sans_conflit.md)
+- Piège « l'erreur que tout le monde fait… » puis la correction : [docs/test_piege_resultat.json](docs/test_piege_resultat.json)
 
-`orchestrator.py` les enchaîne. Chaque étape écrit ses artefacts dans `runs/<id>/` (words.json, candidates.json,
-scores.json, falsification.json, llm_calls.jsonl avec le coût de chaque appel, timings.json).
+## Architecture
 
-Tests : `python tests/trap_test.py` (piège « l'erreur que tout le monde fait… ») · `python compare.py runs/<id> --manuel clip_humain.mp4`.
+```mermaid
+flowchart TD
+  src["Lien ou fichier, 3 h max"] --> orch["Orchestrateur"]
+  orch --> tr["Transcripteur"]
+  tr --> ch["Chercheur"]
+  ch --> ju["Juge"]
+  ju --> fa["Falsificateur"]
+  fa -->|"CONFLIT : ajuste les bornes ou passe au candidat suivant"| fa
+  fa --> mo["Monteur"]
+  fa --> gr["Greffier"]
+  mo --> clip["clip.mp4 9:16"]
+  gr --> card["preuve.json et preuve.md"]
+```
 
-## Limites connues (v0, honnête)
+Le détail des six agents, de leurs prompts (`skills/`) et des artefacts de `runs/<id>/` est dans [docs/architecture.md](docs/architecture.md).
 
-- CPU seulement : une vidéo de 3 h prend environ 30-40 min (transcription + LLM). Mesures dans `timings.json`.
-- Le LLM local (7B) se trompe parfois ; le Falsificateur est volontairement sévère et un garde-fou lexical le complète.
-- Recadrage : un seul cadrage fixe par clip (visage dominant), pas de suivi dynamique.
+## Tests
 
-Licence MIT.
+La suite unitaire ne télécharge ni Whisper ni le LLM : les deux sont simulés.
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+pytest
+ruff check .
+```
+
+`python tests/trap_test.py` rejoue le piège contre le LLM réellement lancé. Ce n'est pas la CI.
+
+## Limites
+
+- CPU seulement : une source de 3 h prend environ 30 à 40 minutes. Les durées sont dans `timings.json`.
+- Le Falsificateur est sévère. Un garde-fou lexical rattrape le cas où le clip s'arrête avant la correction de l'orateur.
+- Le recadrage suit le visage dominant (mediapipe). Sans visage, le cadre reste centré. Avant / après : [docs/avant_apres.png](docs/avant_apres.png).
+
+Licence MIT — Copyright (c) 2026 Lhassan Charfa.

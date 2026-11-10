@@ -1,0 +1,24 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv", "runs", "models", "llm", "tests/trap_run"]
+
+[tool.ruff.lint]
+# E9 / F / B attrapent les vrais bugs. Le pipeline v0 est volontairement compact :
+# les règles de mise en page qui le réécriraient sont ignorées fichier par fichier.
+select = ["E", "W", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"agents/**/*.py" = ["E401", "E701", "E702", "E731", "E741", "I001"]
+"app.py" = ["E401", "E701", "E702", "I001", "B008"]
+"compare.py" = ["E401", "E701", "E702", "I001"]
+"orchestrator.py" = ["E401", "E701", "E702", "I001"]
+"tests/trap_test.py" = ["E401", "E701", "E702", "I001"]
+"tests/mesure_mouvement.py" = ["E401", "E701", "E702", "I001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+addopts = "-q --tb=short"

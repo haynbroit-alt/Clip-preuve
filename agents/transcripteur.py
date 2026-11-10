@@ -6,7 +6,7 @@ vidéo > 3 h 05 refusée (ÉCHEC explicite) ; lien privé/géobloqué -> erreur 
 chunk déjà transcrit -> réutilisé (reprise) ; aucun mot détecté -> ÉCHEC (musique seule, silence).
 """
 import glob, json, os, re
-from .common import jload, jsave, progress, sh, timed, tool, ytdlp
+from .common import jload, jsave, progress, sh, timed, ytdlp
 
 MAX_SEC = 3 * 3600 + 300
 CHUNK = 600

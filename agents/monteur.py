@@ -5,8 +5,8 @@ sous-titres karaoké mot par mot (mot actif jaune + effet pop) ; audio passe-hau
 Cas limites : pas de piste vidéo (podcast audio) -> fond noir 1080x1920 + sous-titres ; aucun visage -> centre (noté) ;
 source déjà verticale -> pas de recadrage horizontal.
 """
-import glob, math, os, statistics, subprocess
-from .common import jsave, progress, sh, tool, ytdlp
+import glob, math, os, subprocess
+from .common import jsave, progress, sh, ytdlp
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FACE_MODEL = os.path.join(ROOT, "llm", "blaze_face_short_range.tflite")
@@ -105,7 +105,7 @@ def smooth_path(samples, cuts, w, cw, dur, hz=5.0):
     if not any(x for _, _, x in raw):
         return None
     xs, out = [], []
-    for k, (t, sg, x) in enumerate(raw):  # combler les trous : valeur connue la plus proche dans le même plan
+    for _k, (t, sg, x) in enumerate(raw):  # combler les trous : valeur connue la plus proche dans le même plan
         if x is None:
             cand = [(abs(t2 - t), x2) for t2, s2, x2 in raw if s2 == sg and x2 is not None]
             x = min(cand)[1] if cand else w / 2

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Usage : ./clip <lien|fichier>   -> un clip + sa carte de preuve
+#         ./clip --ui             -> page web http://127.0.0.1:8000
+#         ./clip <lien> --regenerer
+set -euo pipefail
+cd "$(dirname "$0")"
+PY=${CLIP_PYTHON:-.venv/bin/python}
+if [ -z "${OPENROUTER_API_KEY:-}" ] && ! curl -s -o /dev/null http://127.0.0.1:8088/health; then
+  SRV=$(ls llm/llama-*/llama-server | head -1)
+  nohup "$SRV" -m "${CLIP_GGUF:-llm/model.gguf}" -c 8192 -t "${CLIP_LLM_THREADS:-4}" --host 127.0.0.1 --port 8088 > llm/server.log 2>&1 &
+  echo "Démarrage du LLM local…"; for i in $(seq 1 120); do curl -s http://127.0.0.1:8088/health | grep -q ok && break; sleep 1; done
+fi
+if [ "${1:-}" = "--ui" ]; then exec "$PY" app.py; fi
+exec "$PY" orchestrator.py "$@"

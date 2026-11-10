@@ -1,0 +1,9 @@
+.venv
+runs/
+models
+llm/
+tests/trap_run/
+__pycache__/
+*.part
+.env
+*.key

@@ -1,0 +1,63 @@
+{
+  "A_avant_correction": {
+    "bornes_s": [
+      48.94,
+      77.62
+    ],
+    "duree_s": 28.7,
+    "llm_seul": {
+      "hors_contexte": "PROUVÉ",
+      "info_prealable": "INCONNU",
+      "contredit_apres": "CONFLIT",
+      "coupe_mi_idee": "CONFLIT"
+    },
+    "garde_fou": {
+      "contredit_apres": "CONFLIT"
+    },
+    "final": {
+      "hors_contexte": "PROUVÉ",
+      "info_prealable": "INCONNU",
+      "contredit_apres": "CONFLIT",
+      "coupe_mi_idee": "CONFLIT"
+    }
+  },
+  "B_avec_correction": {
+    "bornes_s": [
+      48.94,
+      100.24
+    ],
+    "duree_s": 51.3,
+    "llm_seul": {
+      "hors_contexte": "PROUVÉ",
+      "info_prealable": "INCONNU",
+      "contredit_apres": "CONFLIT",
+      "coupe_mi_idee": "CONFLIT"
+    },
+    "garde_fou": {},
+    "final": {
+      "hors_contexte": "PROUVÉ",
+      "info_prealable": "INCONNU",
+      "contredit_apres": "CONFLIT",
+      "coupe_mi_idee": "CONFLIT"
+    }
+  },
+  "C_boucle": {
+    "iterations": 2,
+    "bornes_finales_phrases": [
+      7,
+      13
+    ],
+    "statut": "INCONNU",
+    "inclut_correction": true,
+    "actions": [
+      "bornes ajustées -> phrases 7..13",
+      null
+    ]
+  },
+  "RESULTAT": {
+    "A_rejete": "PROUVÉ",
+    "B_non_rejete_pour_contradiction": "ÉCHEC",
+    "A_rejete_par_LLM_seul": true,
+    "C_bornes_etendues_jusqua_correction": "PROUVÉ"
+  }
+}

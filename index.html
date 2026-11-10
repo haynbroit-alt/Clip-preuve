@@ -1,0 +1,35 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clip+Preuve — un seul clip, avec sa preuve</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:760px;margin:30px auto;padding:0 16px;background:#0f1115;color:#eee}
+h1{margin:0 0 4px}p.sub{color:#9aa;margin-top:0}input[type=text]{width:100%;padding:12px;font-size:16px;border-radius:8px;border:1px solid #333;background:#181b22;color:#eee;box-sizing:border-box}
+button{padding:12px 20px;font-size:16px;border:0;border-radius:8px;background:#ffd400;color:#000;font-weight:700;cursor:pointer;margin-top:10px}
+button.sec{background:#2a2f3a;color:#eee}.bar{height:10px;background:#222;border-radius:6px;overflow:hidden;margin:14px 0 4px}.bar div{height:100%;background:#ffd400;width:0}
+.res{display:flex;gap:20px;flex-wrap:wrap;margin-top:20px}video{width:300px;border-radius:10px;background:#000}.card{flex:1;min-width:260px}
+.PROUVÉ{color:#3ddc84}.INCONNU{color:#ffb74d}.CONFLIT{color:#ff5252}.warn{background:#3a2a00;padding:10px;border-radius:8px}td{padding:3px 6px;vertical-align:top;font-size:14px}
+</style></head><body>
+<h1>Clip+Preuve</h1><p class="sub">Collez un lien (YouTube…) ou déposez un fichier (jusqu'à 3 h). Vous recevez <b>un seul clip</b>, le meilleur, avec sa preuve.</p>
+<form id="f"><input type="text" name="url" placeholder="https://www.youtube.com/watch?v=…"><br><br>
+<input type="file" name="fichier" accept="video/*,audio/*"><br><button>Trouver le meilleur moment</button></form>
+<div id="p" hidden><div class="bar"><div id="b"></div></div><small id="m"></small></div>
+<div id="r"></div>
+<script>
+let id=null,t=null;const $=s=>document.querySelector(s);
+$('#f').onsubmit=async e=>{e.preventDefault();$('#r').innerHTML='';const r=await fetch('/api/clip',{method:'POST',body:new FormData(e.target)});
+ if(!r.ok){alert('Donnez un lien ou un fichier');return}id=(await r.json()).id;poll()};
+async function poll(){clearTimeout(t);$('#p').hidden=false;const j=await (await fetch('/api/job/'+id)).json();const p=j.progress;
+ $('#b').style.width=p.pct+'%';$('#m').textContent=p.step+' — '+(p.msg||'');
+ if(p.step==='ÉCHEC'){$('#r').innerHTML='<p class="CONFLIT">ÉCHEC : '+p.msg+'</p>';return}
+ if(j.carte){show(j.carte);return}t=setTimeout(poll,2000)}
+function esc(s){return String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function show(c){const F=c.falsificateur,L={hors_contexte:'Hors contexte ?',info_prealable:"Besoin d'info avant ?",contredit_apres:'Contredit juste après ?',coupe_mi_idee:'Coupé en pleine idée ?'};
+ $('#r').innerHTML=`<div class="res"><video controls src="/api/job/${id}/fichier/${c.clip.fichier}?t=${Date.now()}"></video><div class="card">
+ <h3>Statut : <span class="${c.statut}">${c.statut}</span></h3>${c.avertissement?'<p class="warn">⚠️ '+esc(c.avertissement)+'</p>':''}
+ <h4>Pourquoi ce moment</h4><p>${esc(c.pourquoi_ce_moment)}</p><p><i>« ${esc(c.phrase_cle)} »</i></p>
+ <p><b>${c.clip.debut} → ${c.clip.fin}</b> (${c.clip.duree_s} s)<br>Commence : « ${esc(c.citation_debut)} … »<br>Finit : « … ${esc(c.citation_fin)} »</p>
+ <h4>Falsificateur</h4><table>${Object.keys(F).map(k=>`<tr><td>${L[k]}</td><td class="${F[k].verdict}">${F[k].verdict}</td><td>${esc(F[k].preuve)}</td></tr>`).join('')}</table>
+ <p><small>Coût mesuré : ${c.cout.cout_eur} € · ${c.cout.cout_eur_par_heure} €/h de source (objectif &lt; 0,10 €/h : ${c.cout.objectif_0_10_eur_h}) · ${c.cout.appels_llm} appels LLM</small></p>
+ <button class="sec" onclick="regen()">Régénérer (gratuit)</button> <a href="/api/job/${id}/fichier/preuve.json" style="color:#9aa">carte JSON</a></div></div>`}
+const q=new URLSearchParams(location.search).get('id');if(q){id=q;poll()}
+async function regen(){await fetch('/api/job/'+id+'/regenerer',{method:'POST'});$('#r').innerHTML='';setTimeout(poll,1500)}
+</script></body></html>

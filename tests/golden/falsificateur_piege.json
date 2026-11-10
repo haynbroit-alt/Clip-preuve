@@ -1,0 +1,38 @@
+{
+  "i": 7,
+  "j": 10,
+  "llm_derive": {
+    "hors_contexte": "PROUVÉ",
+    "info_prealable": "PROUVÉ",
+    "contredit_apres": "PROUVÉ",
+    "coupe_mi_idee": "PROUVÉ"
+  },
+  "final": {
+    "hors_contexte": {
+      "verdict": "PROUVÉ",
+      "preuve": "le clip se comprend seul",
+      "source": "LLM"
+    },
+    "info_prealable": {
+      "verdict": "PROUVÉ",
+      "preuve": "pas besoin du début",
+      "source": "LLM"
+    },
+    "contredit_apres": {
+      "verdict": "CONFLIT",
+      "preuve": "garde-fou : après le clip, «Mais attention, c'est faux : les études montrent que l'étirement statique juste avant l'effort ne réduit pas les blessur»",
+      "source": "garde-fou lexical",
+      "llm_disait": {
+        "verdict": "PROUVÉ",
+        "preuve": "le Falsificateur n'a trouvé aucune correction dans les 60 s qui suivent"
+      }
+    },
+    "coupe_mi_idee": {
+      "verdict": "PROUVÉ",
+      "preuve": "le Falsificateur n'a trouvé aucune suite indispensable dans les 60 s qui suivent",
+      "source": "LLM"
+    }
+  },
+  "garde_fou_contredit": "CONFLIT",
+  "k": 11
+}

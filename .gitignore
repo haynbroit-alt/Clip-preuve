@@ -1,0 +1,40 @@
+# Environnements et caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Secrets — jamais versionnés
+.env
+.env.*
+*.key
+*.pem
+
+# Modèles téléchargés par install.sh
+models/
+llm/
+*.gguf
+*.tflite
+*.bin
+*.part
+
+# Audio, vidéo et dossiers de run
+runs/
+tests/trap_run/
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.aac
+*.ogg
+*.mp4
+*.mkv
+*.webm
+*.mov
+*.avi

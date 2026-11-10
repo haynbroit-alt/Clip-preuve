@@ -1,0 +1,62 @@
+[project]
+name = "clip-preuve"
+version = "0.2.0"
+description = "Un lien vidéo, un clip vertical, une carte de preuve."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Lhassan Charfa" }]
+dependencies = [
+    "faster-whisper==1.2.1",
+    "yt-dlp==2026.10.26",
+    "fastapi==0.162.2",
+    "uvicorn==0.54.0",
+    "python-multipart==0.0.33",
+    "mediapipe==0.10.35",
+    "opencv-python-headless==4.14.0.94",
+    "pydantic==2.14.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.2.0",
+    "pytest-cov==7.1.0",
+    "coverage==7.17.2",
+    "ruff==0.17.4",
+    "mypy==2.4.1",
+    "jsonschema==4.26.0",
+    "pre-commit==4.7.0",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = [".venv", "runs", "models", "llm", "tests/trap_run"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+addopts = "-q --tb=short"
+
+[tool.coverage.run]
+source = ["agents", "orchestrator"]
+# Logique hors entrées-sorties. monteur et transcripteur parlent à ffmpeg, Whisper, mediapipe.
+omit = ["agents/monteur.py", "agents/transcripteur.py"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["agents", "orchestrator.py"]
+plugins = ["pydantic.mypy"]
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["cv2", "cv2.*", "mediapipe", "mediapipe.*", "faster_whisper", "faster_whisper.*"]
+ignore_missing_imports = true

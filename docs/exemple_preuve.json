@@ -1,0 +1,82 @@
+{
+  "source": {
+    "titre": "\"Je ne peux pas travailler pour autre chose que l’excellence\" - Nina Métayer",
+    "chaine": "Matthieu Stefani - Génération Do It Yourself",
+    "lien": "https://www.youtube.com/watch?v=iJWFW45Eplg",
+    "duree_s": 10754.6
+  },
+  "clip": {
+    "debut": "01:40:16.180",
+    "fin": "01:41:01.360",
+    "debut_s": 6016.18,
+    "fin_s": 6061.36,
+    "duree_s": 45.18,
+    "fichier": "clip.mp4"
+  },
+  "citation_debut": "Toujours pas aujourd 'hui ? Ben si. Parce que maintenant, je me",
+  "citation_fin": "Blanger, je suis sûr que tu pourrais être très fort en Blanger.",
+  "pourquoi_ce_moment": "Le début est accrocheur et donne envie de continuer à écouter. La phrase 'je ne me suis pas imaginée, mais je me suis jamais dit que je serais pâtissière' est citable.",
+  "phrase_cle": "je ne me suis pas imaginée, mais je me suis jamais dit que je serais pâtissière",
+  "notes_juge": {
+    "accroche_3s": 8,
+    "autonomie": 9,
+    "payoff": 7,
+    "densite": 8,
+    "citabilite": 6
+  },
+  "score": 7.76,
+  "candidat": "c2",
+  "bornes_ajustees": false,
+  "falsificateur": {
+    "hors_contexte": {
+      "verdict": "PROUVÉ",
+      "preuve": "Elle n'est plus boulangère et ne le sera jamais.",
+      "source": "LLM"
+    },
+    "info_prealable": {
+      "verdict": "INCONNU",
+      "preuve": "",
+      "source": "LLM"
+    },
+    "contredit_apres": {
+      "verdict": "INCONNU",
+      "preuve": "citation introuvable dans le contexte APRÈS : «Peut -être. Mais est -ce que… je sais pas, enfin faut la vie nous apportera.»",
+      "source": "LLM"
+    },
+    "coupe_mi_idee": {
+      "verdict": "CONFLIT",
+      "preuve": "«Alors, je me pose parfois la question, j 'essaye de déceler tout ça.»",
+      "source": "LLM"
+    }
+  },
+  "statut": "INCONNU",
+  "avertissement": "AVERTISSEMENT : aucun candidat n'a passé le Falsificateur en 3 itérations. Ce clip est le moins mauvais, il contient encore un ou plusieurs CONFLIT. Ne pas publier sans vérifier.",
+  "iterations_falsificateur": 1,
+  "recadrage": {
+    "methode": "visage mediapipe",
+    "images_avec_visage": 48,
+    "images_testees": 47,
+    "centre_x": 0.542,
+    "mots_sous_titres": 181
+  },
+  "modele_llm": "local-llama.cpp/qwen7b.gguf",
+  "cout": {
+    "appels_llm": 9,
+    "tokens": 9242,
+    "secondes_llm": 324.8,
+    "cout_eur": 0.0,
+    "heures_source": 2.987,
+    "cout_eur_par_heure": 0.0,
+    "objectif_0_10_eur_h": "PROUVÉ",
+    "note": "LLM local (llama.cpp CPU) : 0 € d'API ; électricité/CPU non comptés."
+  },
+  "temps_s": {
+    "ingestion": 65.47,
+    "transcription": 452.33,
+    "silencedetect": 2.56,
+    "chercheur": 8.92,
+    "juge": 171.31,
+    "falsificateur": 153.58,
+    "monteur": 51.94
+  }
+}

@@ -1,0 +1,9 @@
+# Outils de lint, typage et tests. Aucun modèle.
+pydantic==2.14.3
+pytest==9.2.0
+pytest-cov==7.1.0
+coverage==7.17.2
+ruff==0.17.4
+mypy==2.4.1
+jsonschema==4.26.0
+pre-commit==4.7.0

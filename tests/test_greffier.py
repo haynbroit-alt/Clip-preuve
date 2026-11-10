@@ -4,9 +4,7 @@ import json
 
 from agents import greffier
 
-MOTS = (
-    "Pourquoi cette histoire commence ici et pas ailleurs dans le récit complet aujourd'hui vraiment"
-).split()
+MOTS = ("Pourquoi cette histoire commence ici et pas ailleurs dans le récit complet aujourd'hui vraiment").split()
 
 
 def _words(debut=10.0):

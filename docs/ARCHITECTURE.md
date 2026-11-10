@@ -26,7 +26,9 @@ flowchart TD
 | Monteur | `agents/monteur.py` | `skills/monteur.md` | `clip.mp4`, `crop.json`, `subs.ass` |
 | Greffier | `agents/greffier.py` | `skills/greffier.md` | `preuve.json`, `preuve.md` |
 
-Le client LLM unique est `agents/llm.py` (llama.cpp sur `127.0.0.1:8088` par défaut, OpenRouter si `OPENROUTER_API_KEY` est défini). Chaque appel est ajouté à `llm_calls.jsonl` avec les jetons, la durée et le coût en euros. Le coût local est 0 € d'API.
+Le client LLM unique est `agents/llm.py` (llama.cpp sur `127.0.0.1:8088` par défaut, OpenRouter si `OPENROUTER_API_KEY` est défini). Chaque appel est ajouté à `llm_calls.jsonl` avec les jetons, la durée et le coût en euros, et une ligne JSON part sur stderr (`agents/log.py`). La clé n'est ni affichée ni journalisée. Le coût local est 0 € d'API.
+
+Les sorties du juge et du Falsificateur passent par les modèles pydantic de `agents/contracts.py`. Un verdict hors `PROUVÉ` / `INCONNU` / `CONFLIT` devient `INCONNU`. Le score du juge continue de borner chaque note entre 0 et 10 ; la note brute reste celle qui est écrite sur la carte. La carte elle-même suit `schemas/preuve.schema.json`.
 
 ## Les quatre tests
 
@@ -37,7 +39,7 @@ Pour le clip retenu, le Falsificateur répond, puis un garde-fou lexical peut ag
 3. **Contredit juste après** — l'orateur corrige-t-il l'affirmation dans la minute qui suit ?
 4. **Coupé en pleine idée** — la fin tombe-t-elle au milieu d'une phrase ou d'un raisonnement ?
 
-Une citation de correction ne compte que si elle se retrouve dans le contexte *après* le clip. Le garde-fou, lui, force **CONFLIT** quand le clip porte une affirmation du type « l'erreur que tout le monde fait » et que la correction (« c'est faux », « en réalité »…) arrive dans les 40 secondes suivantes, même si le modèle a répondu « aucune ».
+Une citation de correction ne compte que si elle se retrouve dans le contexte *après* le clip. Le garde-fou force **CONFLIT** quand le clip porte une affirmation du type « l'erreur que tout le monde fait » et que la correction (« c'est faux », « en réalité »…) arrive dans les 40 secondes suivantes, même si le modèle a répondu « aucune ».
 
 ## Entrées
 

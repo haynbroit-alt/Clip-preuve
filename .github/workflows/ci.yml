@@ -10,26 +10,49 @@ permissions:
   contents: read
 
 jobs:
-  lint-and-test:
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: requirements-dev.txt
-
-      - name: Installer les outils de test
-        run: python -m pip install -r requirements-dev.txt
-
+      - name: Installer Ruff
+        run: python -m pip install ruff==0.17.4
       - name: Ruff
         run: ruff check .
+      - name: Ruff format
+        run: ruff format --check .
 
-      - name: Pytest
-        run: pytest
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Installer mypy et pydantic
+        run: python -m pip install mypy==2.4.1 pydantic==2.14.3
+      - name: mypy --strict
+        run: mypy --strict agents orchestrator.py
 
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Installer les outils de test
+        run: python -m pip install -r requirements-dev.txt
+      - name: Pytest et couverture
+        run: pytest --cov=agents --cov=orchestrator --cov-report=term-missing --cov-fail-under=85
       - name: Refuser secrets, modèles, audio et vidéo
         run: |
           set -euo pipefail

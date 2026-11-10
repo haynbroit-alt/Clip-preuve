@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haynbroit-alt/Clip-preuve/schemas/preuve.schema.json",
+  "title": "Carte de preuve",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source",
+    "clip",
+    "citation_debut",
+    "citation_fin",
+    "pourquoi_ce_moment",
+    "phrase_cle",
+    "notes_juge",
+    "score",
+    "candidat",
+    "bornes_ajustees",
+    "falsificateur",
+    "statut",
+    "avertissement",
+    "iterations_falsificateur",
+    "recadrage",
+    "modele_llm",
+    "cout",
+    "temps_s"
+  ],
+  "properties": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["titre", "chaine", "lien", "duree_s"],
+      "properties": {
+        "titre": {"type": ["string", "null"]},
+        "chaine": {"type": ["string", "null"]},
+        "lien": {"type": "string"},
+        "duree_s": {"type": "number"}
+      }
+    },
+    "clip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["debut", "fin", "debut_s", "fin_s", "duree_s", "fichier"],
+      "properties": {
+        "debut": {"type": "string", "pattern": "^\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$"},
+        "fin": {"type": "string", "pattern": "^\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$"},
+        "debut_s": {"type": "number"},
+        "fin_s": {"type": "number"},
+        "duree_s": {"type": "number"},
+        "fichier": {"type": "string"}
+      }
+    },
+    "citation_debut": {"type": "string"},
+    "citation_fin": {"type": "string"},
+    "pourquoi_ce_moment": {"type": ["string", "null"]},
+    "phrase_cle": {"type": ["string", "null"]},
+    "notes_juge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accroche_3s", "autonomie", "payoff", "densite", "citabilite"],
+      "properties": {
+        "accroche_3s": {"type": ["number", "null"]},
+        "autonomie": {"type": ["number", "null"]},
+        "payoff": {"type": ["number", "null"]},
+        "densite": {"type": ["number", "null"]},
+        "citabilite": {"type": ["number", "null"]}
+      }
+    },
+    "score": {"type": "number"},
+    "candidat": {"type": "string"},
+    "bornes_ajustees": {"type": "boolean"},
+    "falsificateur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hors_contexte", "info_prealable", "contredit_apres", "coupe_mi_idee"],
+      "properties": {
+        "hors_contexte": {"$ref": "#/$defs/critere"},
+        "info_prealable": {"$ref": "#/$defs/critere"},
+        "contredit_apres": {"$ref": "#/$defs/critere"},
+        "coupe_mi_idee": {"$ref": "#/$defs/critere"}
+      }
+    },
+    "statut": {"enum": ["PROUVÉ", "INCONNU"]},
+    "avertissement": {"type": ["string", "null"]},
+    "iterations_falsificateur": {"type": "integer", "minimum": 1},
+    "recadrage": {"type": "object"},
+    "modele_llm": {"type": "string"},
+    "cout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "appels_llm",
+        "tokens",
+        "secondes_llm",
+        "cout_eur",
+        "heures_source",
+        "cout_eur_par_heure",
+        "objectif_0_10_eur_h",
+        "note"
+      ],
+      "properties": {
+        "appels_llm": {"type": "integer", "minimum": 0},
+        "tokens": {"type": "integer", "minimum": 0},
+        "secondes_llm": {"type": "number", "minimum": 0},
+        "cout_eur": {"type": "number", "minimum": 0},
+        "heures_source": {"type": "number", "minimum": 0},
+        "cout_eur_par_heure": {"type": "number"},
+        "objectif_0_10_eur_h": {"enum": ["PROUVÉ", "ÉCHEC"]},
+        "note": {"type": "string"}
+      }
+    },
+    "temps_s": {"type": "object", "additionalProperties": {"type": "number"}}
+  },
+  "$defs": {
+    "critere": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "preuve", "source"],
+      "properties": {
+        "verdict": {"enum": ["PROUVÉ", "INCONNU", "CONFLIT"]},
+        "preuve": {"type": "string"},
+        "source": {"type": "string"},
+        "llm_disait": {
+          "type": "object",
+          "required": ["verdict", "preuve"],
+          "properties": {
+            "verdict": {"type": "string"},
+            "preuve": {}
+          }
+        }
+      }
+    }
+  }
+}

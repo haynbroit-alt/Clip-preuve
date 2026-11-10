@@ -53,7 +53,7 @@ flowchart TD
   gr --> card["preuve.json et preuve.md"]
 ```
 
-Le détail des six agents, de leurs prompts (`skills/`) et des artefacts de `runs/<id>/` est dans [docs/architecture.md](docs/architecture.md).
+Le détail des six agents, de leurs prompts (`skills/`) et des artefacts de `runs/<id>/` est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Tests
 

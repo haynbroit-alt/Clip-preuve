@@ -105,9 +105,7 @@ def test_candidat_en_echec_est_ignore_puis_tous_echouent(tmp_path, monkeypatch):
     ranked = juge.run_agent(str(tmp_path / "a"), [], cands)
     assert [c["id"] for c in ranked] == ["ok"]
 
-    monkeypatch.setattr(
-        juge, "call_json", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down"))
-    )
+    monkeypatch.setattr(juge, "call_json", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down")))
     (tmp_path / "b").mkdir()
     with pytest.raises(RuntimeError, match="aucun candidat"):
         juge.run_agent(

@@ -8,10 +8,7 @@ from agents import chercheur
 def mots(texte, debut, fin):
     parts = texte.split()
     pas = (fin - debut) / len(parts)
-    return [
-        {"w": p, "s": round(debut + i * pas, 3), "e": round(debut + (i + 1) * pas, 3)}
-        for i, p in enumerate(parts)
-    ]
+    return [{"w": p, "s": round(debut + i * pas, 3), "e": round(debut + (i + 1) * pas, 3)} for i, p in enumerate(parts)]
 
 
 def test_phrases_ponctuation_pause_et_question():
@@ -72,12 +69,14 @@ def test_sujets_separes_quand_le_lexique_change():
     astro = "Planète galaxie orbite satellite télescope nébuleuse."
     sents = []
     for k in range(9):
-        sents.append({
-            "s": k * 15.0,
-            "e": (k + 1) * 15.0,
-            "text": cuisine if k < 3 else astro,
-            "q": False,
-        })
+        sents.append(
+            {
+                "s": k * 15.0,
+                "e": (k + 1) * 15.0,
+                "text": cuisine if k < 3 else astro,
+                "q": False,
+            }
+        )
     lab = chercheur.topics(sents)
     assert lab[:3] == [0, 0, 0]
     assert lab[3:] == [1] * 6
@@ -120,9 +119,7 @@ def test_exclusion_retire_le_passage_deja_livre(tmp_path):
     _, chosen = chercheur.run_agent(str(tmp_path / "a"), words, sil)
     assert len(chosen) >= 2
     top = chosen[0]
-    _, reste = chercheur.run_agent(
-        str(tmp_path / "b"), words, sil, exclude=[(top["s"], top["e"])]
-    )
+    _, reste = chercheur.run_agent(str(tmp_path / "b"), words, sil, exclude=[(top["s"], top["e"])])
     assert reste
     assert all(c["e"] <= top["s"] or c["s"] >= top["e"] for c in reste)
 

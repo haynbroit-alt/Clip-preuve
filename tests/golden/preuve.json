@@ -1,0 +1,72 @@
+{
+  "source": {
+    "titre": "Titre fixe",
+    "chaine": "Chaîne",
+    "lien": "https://example.com/v",
+    "duree_s": 3600.0
+  },
+  "clip": {
+    "debut": "00:00:10.000",
+    "fin": "00:00:15.500",
+    "debut_s": 10.0,
+    "fin_s": 15.5,
+    "duree_s": 5.5,
+    "fichier": "clip.mp4"
+  },
+  "citation_debut": "Pourquoi cette histoire commence ici et pas ailleurs dans le récit complet",
+  "citation_fin": "histoire commence ici et pas ailleurs dans le récit complet aujourd'hui vraiment",
+  "pourquoi_ce_moment": "la chute est nette",
+  "phrase_cle": "cette histoire",
+  "notes_juge": {
+    "accroche_3s": 8,
+    "autonomie": 7,
+    "payoff": 9,
+    "densite": 6,
+    "citabilite": 8
+  },
+  "score": 8.2,
+  "candidat": "c1",
+  "bornes_ajustees": false,
+  "falsificateur": {
+    "hors_contexte": {
+      "verdict": "PROUVÉ",
+      "preuve": "le clip tient",
+      "source": "LLM"
+    },
+    "info_prealable": {
+      "verdict": "PROUVÉ",
+      "preuve": "le clip tient",
+      "source": "LLM"
+    },
+    "contredit_apres": {
+      "verdict": "PROUVÉ",
+      "preuve": "le clip tient",
+      "source": "LLM"
+    },
+    "coupe_mi_idee": {
+      "verdict": "PROUVÉ",
+      "preuve": "le clip tient",
+      "source": "LLM"
+    }
+  },
+  "statut": "PROUVÉ",
+  "avertissement": null,
+  "iterations_falsificateur": 1,
+  "recadrage": {
+    "methode": "centre (test)"
+  },
+  "modele_llm": "local-llama.cpp/mock.gguf",
+  "cout": {
+    "appels_llm": 1,
+    "tokens": 14,
+    "secondes_llm": 1.5,
+    "cout_eur": 0.0,
+    "heures_source": 1.0,
+    "cout_eur_par_heure": 0.0,
+    "objectif_0_10_eur_h": "PROUVÉ",
+    "note": "LLM local (llama.cpp CPU) : 0 € d'API ; électricité/CPU non comptés."
+  },
+  "temps_s": {
+    "juge": 1.25
+  }
+}

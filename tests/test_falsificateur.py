@@ -15,8 +15,10 @@ PIEGE = [
     "On voit ça dans tous les parcs le dimanche matin : les gens tirent sur leurs jambes pendant cinq minutes.",
     "Ils pensent que ça protège les muscles et que ça évite les blessures.",
     "Et franchement, ça paraît logique, on nous l'a appris à l'école pendant des années.",
-    "Mais attention, c'est faux : les études montrent que l'étirement statique juste avant l'effort ne réduit pas les blessures et diminue même la force pendant une heure.",
-    "Ce qu'il faut faire à la place, c'est un échauffement dynamique : dix minutes de footing lent, des montées de genoux et des talons-fesses.",
+    "Mais attention, c'est faux : les études montrent que l'étirement statique juste avant "
+    "l'effort ne réduit pas les blessures et diminue même la force pendant une heure.",
+    "Ce qu'il faut faire à la place, c'est un échauffement dynamique : dix minutes de footing "
+    "lent, des montées de genoux et des talons-fesses.",
     "Les étirements, gardez-les pour plus tard dans la journée, quand le corps est froid et reposé.",
     "Passons maintenant à la récupération, qui est le deuxième grand sujet de ce matin.",
     "Le sommeil reste le meilleur outil de récupération, bien avant les compléments alimentaires.",

@@ -32,13 +32,15 @@ def _faux_whisper(beams_out):
 
     class Model:
         def __init__(self, model, device, compute_type, download_root, cpu_threads):
-            beams.append({
-                "model": model,
-                "device": device,
-                "compute_type": compute_type,
-                "download_root": download_root,
-                "cpu_threads": cpu_threads,
-            })
+            beams.append(
+                {
+                    "model": model,
+                    "device": device,
+                    "compute_type": compute_type,
+                    "download_root": download_root,
+                    "cpu_threads": cpu_threads,
+                }
+            )
 
         def transcribe(self, path, **kw):
             lot = beams_out[len([b for b in beams if "beam" in b])]
@@ -88,6 +90,7 @@ def test_cache_words_json_ne_charge_pas_whisper(tmp_path, monkeypatch):
 def test_aucun_mot_est_un_echec(tmp_path, monkeypatch):
     mod, _beams = _faux_whisper([[]])
     monkeypatch.setitem(sys.modules, "faster_whisper", mod)
+
     def fake_sh(cmd, **kw):
         if cmd and cmd[0] == "ffmpeg":
             with open(cmd[-1], "wb") as fh:
@@ -127,7 +130,5 @@ def test_silences_parses_puis_reutilises(tmp_path, monkeypatch):
     stderr = "silence_start: 1.25\nsilence_end: 1.80\nbruit\nsilence_start: 8.0\n"
     monkeypatch.setattr(transcripteur, "sh", lambda cmd, **kw: _Ret(stderr=stderr))
     assert transcripteur.silences(str(tmp_path)) == [[1.25, 1.8]]
-    monkeypatch.setattr(
-        transcripteur, "sh", lambda *a, **k: (_ for _ in ()).throw(AssertionError("ffmpeg"))
-    )
+    monkeypatch.setattr(transcripteur, "sh", lambda *a, **k: (_ for _ in ()).throw(AssertionError("ffmpeg")))
     assert transcripteur.silences(str(tmp_path)) == [[1.25, 1.8]]

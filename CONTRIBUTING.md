@@ -1,10 +1,10 @@
 # Contribuer
 
-Les modifications se font par pull request vers `main`. La CI lance Ruff et pytest. Elle ne télécharge pas de modèle.
+Les modifications se font par pull request vers `main`. La CI lance trois jobs : Ruff, mypy --strict, pytest. Elle ne télécharge pas de modèle.
 
 ## English
 
-Open a pull request against `main`. CI runs Ruff and pytest only — no model download. Do not commit secrets, `.gguf` / `.tflite` weights, audio, or video files. Selection and Falsificateur behaviour is covered by unit tests: change it only with a failing test first.
+Open a pull request against `main`. CI runs Ruff, mypy --strict, and pytest — no model download. Do not commit secrets, `.gguf` / `.tflite` weights, audio, or video files. Selection and Falsificateur behaviour is covered by unit tests: change it only with a failing test first.
 
 ## Mise en route
 
@@ -20,8 +20,11 @@ Pour développer, Python 3.10+ suffit :
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/pytest
 .venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/mypy --strict agents orchestrator.py
+.venv/bin/pytest --cov=agents --cov=orchestrator --cov-fail-under=85
+.venv/bin/pre-commit run --all-files
 ```
 
 `requirements.txt` ne sert qu'à l'exécution (Whisper, FastAPI, mediapipe). Les tests simulent le LLM et Whisper.

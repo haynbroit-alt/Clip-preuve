@@ -130,3 +130,13 @@ def test_page_echappe_le_message_d_erreur_et_les_identifiants():
     # aucun ${id} ni ${c.clip.fichier} brut dans le HTML généré
     assert "${id}" not in html
     assert "${c.clip.fichier}" not in html
+
+
+def test_page_affiche_la_phrase_cle_inconnue_et_l_avis_de_l_ia():
+    with open(os.path.join(app.HERE, "index.html"), encoding="utf-8") as f:
+        html = f.read()
+    assert "Phrase clé : INCONNU" in html
+    assert "pourquoi_ce_moment_source" in html
+    assert "relances_sans_vad" in html
+    # la phrase clé n'est affichée que si elle existe (null = introuvable dans la transcription)
+    assert "${c.phrase_cle?" in html

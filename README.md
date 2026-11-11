@@ -67,6 +67,8 @@ ruff check .
 
 `python tests/trap_test.py` rejoue le piège contre le LLM réellement lancé. Ce n'est pas la CI.
 
+`python tests/eval/rapport_falsificateur.py` mesure le garde-fou du Falsificateur sur 30 extraits annotés, LLM remplacé : voir [docs/banc_falsificateur.md](docs/banc_falsificateur.md). `python -m agents.integrite runs/<id>` vérifie qu'une carte et ses fichiers n'ont pas changé depuis leur création.
+
 ## Limites
 
 - CPU seulement : une source de 3 h prend environ 30 à 40 minutes. Les durées sont dans `timings.json`.

@@ -6,6 +6,10 @@
   livré, des prompts `skills/juge.md` et `skills/falsificateur.md`, commit du code, puis empreinte de la carte.
   `python -m agents.integrite runs/<id>` signale tout fichier ou toute carte modifiés depuis. Cela prouve
   l'absence de modification, pas la justesse du verdict.
+- Banc du Falsificateur (`tests/eval/falsificateur/cas.json`, 30 extraits synthétiques, dont 5 injections de
+  consigne) : LLM remplacé par une réponse complaisante, on mesure ce que le code attrape seul. Départ :
+  « contredit juste après » 9 faux CONFLIT sur 19 et 4 CONFLIT manqués sur 11 ; « coupé en pleine idée »
+  1 manqué sur 3. Chiffres figés dans `tests/test_eval_falsificateur.py`. Voir `docs/banc_falsificateur.md`.
 
 ## Réparation de la fusion PR #3 / PR #4
 

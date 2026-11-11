@@ -1,5 +1,13 @@
 # Changelog
 
+## Réparation de la fusion PR #3 / PR #4
+
+- `main` était cassé (8 tests en échec, ruff et mypy en erreur) : la fusion de `main` dans la PR #3 avait
+  gardé l'orchestrateur de la PR #4, sans le verrou de livraison sur CONFLIT, les candidats non certifiés,
+  `--align` ni l'export EDL / FCPXML. Orchestrateur de la PR #3 rétabli, avec l'archivage `preuve_<n>.*`.
+- Une seule relance sans VAD (décision `agents/vad.py`) au lieu de deux ; la passe sans VAD ne garde que les
+  segments jugés parlés et sûrs (`segment_sur`), contre les hallucinations de Whisper sur la musique.
+
 ## Non publié
 
 Correctifs de fiabilité et de sécurité, sans changer la sélection, le Falsificateur ni les six agents.

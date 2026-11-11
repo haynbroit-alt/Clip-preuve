@@ -13,7 +13,7 @@ Paste a video link or file (up to 3 hours). Clip-preuve returns one 20–90s ver
 ## Utilisation
 
 ```bash
-./install.sh                                  # une fois (Linux, ffmpeg, Python 3.10+)
+./install.sh                                  # une fois (Linux, ffmpeg, Python 3.11+)
 ./clip "https://www.youtube.com/watch?v=..."  # runs/<id>/clip.mp4 + preuve.md
 ./clip --ui                                   # http://127.0.0.1:8000
 ```

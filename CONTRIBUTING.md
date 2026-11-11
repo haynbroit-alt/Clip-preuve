@@ -15,7 +15,7 @@ Pour lancer l'outil (modèle inclus, plusieurs gigaoctets) :
 ./clip "https://www.youtube.com/watch?v=..."
 ```
 
-Pour développer, Python 3.10+ suffit :
+Pour développer, Python 3.11+ suffit (yt-dlp et coverage épinglés exigent 3.11) :
 
 ```bash
 python3 -m venv .venv

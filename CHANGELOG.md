@@ -1,5 +1,12 @@
 # Changelog
 
+## Manifeste d'intégrité et banc du Falsificateur
+
+- Chaque carte (certifiée ou candidate) est scellée : SHA-256 de l'audio transcrit, de la transcription, du clip
+  livré, des prompts `skills/juge.md` et `skills/falsificateur.md`, commit du code, puis empreinte de la carte.
+  `python -m agents.integrite runs/<id>` signale tout fichier ou toute carte modifiés depuis. Cela prouve
+  l'absence de modification, pas la justesse du verdict.
+
 ## Réparation de la fusion PR #3 / PR #4
 
 - `main` était cassé (8 tests en échec, ruff et mypy en erreur) : la fusion de `main` dans la PR #3 avait

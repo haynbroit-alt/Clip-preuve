@@ -6,6 +6,7 @@ import os
 import pytest
 
 import orchestrator
+from agents import integrite
 
 FINAL = {
     "hors_contexte": {"verdict": "PROUVÉ", "preuve": "ok", "source": "LLM"},
@@ -147,6 +148,9 @@ def test_candidat_suivant_non_certifie(tmp_path, monkeypatch):
     assert "00:00:40:00" in (run / "clip.edl").read_text(encoding="utf-8")
     assert "fcpxml" in (run / "clip.fcpxml").read_text(encoding="utf-8")
     assert json.loads((run / "preuve.json").read_text(encoding="utf-8"))["certifie"] is True
+    # carte certifiée et candidat scellés : rien n'a bougé depuis le scellement
+    assert integrite.verifier(str(run)) == []
+    assert integrite.verifier(str(run), "preuve_c2") == []
 
 
 def test_echec_ecrit_dans_progress(tmp_path, monkeypatch):
@@ -211,6 +215,9 @@ def test_regenerer_conserve_chaque_carte(tmp_path, monkeypatch):
     # preuve.json / preuve.md = la dernière carte (ce que lit l'interface et ce qu'affiche la CLI)
     assert carte("preuve.json") == carte("preuve_3.json")
     assert (run / "preuve.md").read_bytes() == (run / "preuve_3.md").read_bytes()
+    # les cartes archivées restent vérifiables après les régénérations
+    for nom in ("preuve", "preuve_1", "preuve_2", "preuve_3"):
+        assert integrite.verifier(str(run), nom) == [], nom
 
 
 def test_archivage_ne_reecrit_jamais_une_copie_existante(tmp_path):

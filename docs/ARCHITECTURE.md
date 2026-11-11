@@ -49,3 +49,4 @@ Le verrou de livraison (`agents/livraison.py`) relit le verdict déjà produit e
 - Web : `./clip --ui` lance `app.py` (FastAPI) et `index.html`. Un job à la fois. Le serveur n'accepte que les hôtes locaux (`CLIP_HOSTS` pour en ajouter), refuse les écritures venues d'un autre site et plafonne l'upload (`CLIP_MAX_UPLOAD_MO`, 8 Go par défaut).
 - Régénérer : `preuve_<n>.json` / `preuve_<n>.md` conservent la carte de chaque clip ; `preuve.json` / `preuve.md` sont la dernière.
 - Comparaison manuelle : `python compare.py runs/<id> --manuel clip_humain.mp4`. Sans fichier de référence, le verdict est INCONNU.
+- Intégrité : `agents/integrite.py` scelle chaque carte (`integrite.fichiers`, `integrite.code`, `integrite.empreinte_carte`). Vérification : `python -m agents.integrite runs/<id> [preuve_c2]`. L'empreinte ne protège contre une réécriture que si elle est publiée ailleurs que dans le run.

@@ -4,8 +4,8 @@ Artefacts : source.json, audio.wav, chunks/*.json, words.json, silences.json.
 Cas limites : chunk anormalement troué (< 60 mots/min) -> repassé en beam 5
 (mesuré : 276 -> 2033 mots sur un chunk Thinkerview) ;
 vidéo > 3 h 05 refusée (ÉCHEC explicite) ; lien privé/géobloqué -> erreur yt-dlp remontée ;
-chunk vide après 2 passes (musique sur la voix) -> 3e passe sans VAD, segments sûrs seulement,
-notée dans vad_relances.json ;
+VAD qui efface la parole (agents/vad.py) -> essai sans VAD, segments sûrs seulement (segment_sur),
+noté dans vad_relances.json et sur la carte ;
 chunk déjà transcrit -> réutilisé (reprise) ; aucun mot détecté -> ÉCHEC (musique seule, silence).
 """
 
@@ -94,6 +94,7 @@ def ingest(run: str, src: str) -> dict[str, Any]:
 def _decoder(
     model: Any, chemin: str, lang: str, beam: int, offset: float, vad: bool
 ) -> tuple[list[dict[str, Any]], int]:
+    """Sans VAD, seuls les segments `segment_sur` sont gardés : Whisper hallucine sur la musique."""
     segs, _info = model.transcribe(
         chemin,
         language=lang,
@@ -105,6 +106,8 @@ def _decoder(
     segs = list(segs)
     mots: list[dict[str, Any]] = []
     for seg in segs:
+        if not vad and not segment_sur(seg):
+            continue
         for w in seg.words or []:
             if w.word.strip():
                 mots.append({"w": w.word.strip(), "s": round(w.start + offset, 3), "e": round(w.end + offset, 3)})
@@ -160,41 +163,25 @@ def transcribe(run: str, meta: dict[str, Any], lang: str = "fr", align: str = "w
             )
             cdur = min(CHUNK, dur - i * CHUNK)
             ws: list[dict[str, Any]] = []
+            sans_vad = False
             for beam in (1, 5):  # garde-fou : < 60 mots/min -> 2e passe beam 5
                 brut, nseg = _decoder(model, cw, lang, beam, i * CHUNK, True)
                 if vad_ecrase(cdur, brut, nseg):
                     secours, n2 = _decoder(model, cw, lang, beam, i * CHUNK, False)
                     w2, _sans = choisir_mots(cdur, brut, nseg, secours)
+                    vient_sans_vad = bool(secours) and w2 is secours
                     logger().warning(
                         "VAD retiré, nouvel essai sans filtre",
                         extra={"chunk": i, "segments": nseg, "segments_sans": n2},
                     )
                 else:
-                    w2 = brut
+                    w2, vient_sans_vad = brut, False
                 if len(w2) > len(ws):
-                    ws = w2
+                    ws, sans_vad = w2, vient_sans_vad
                 if len(ws) >= 60 * cdur / 60 or cdur < 60:
                     break
-            if not ws:
-                # garde-fou VAD : le filtre de parole peut tout effacer quand de la musique couvre la voix.
-                # 3e passe sans VAD, en ne gardant que les segments que Whisper juge parlés et sûrs
-                # (sans VAD, Whisper hallucine sur la musique) ; la relance est notée sur la carte.
-                segs, _ = model.transcribe(
-                    cw,
-                    language=lang,
-                    beam_size=5,
-                    word_timestamps=True,
-                    vad_filter=False,
-                    condition_on_previous_text=False,
-                )
-                ws = [
-                    {"w": w.word.strip(), "s": round(w.start + i * CHUNK, 3), "e": round(w.end + i * CHUNK, 3)}
-                    for s in segs
-                    if getattr(s, "no_speech_prob", 0.0) < NO_SPEECH_MAX
-                    and getattr(s, "avg_logprob", 0.0) > LOGPROB_MIN
-                    for w in (s.words or [])
-                    if w.word.strip()
-                ]
+            if sans_vad and ws:
+                # passe sans VAD retenue (segments sûrs seulement) : notée sur la carte
                 relances = cast(list[dict[str, Any]], jload(os.path.join(run, "vad_relances.json"), []))
                 relances.append({"chunk": i, "debut_s": i * CHUNK, "mots": len(ws)})
                 jsave(os.path.join(run, "vad_relances.json"), relances)

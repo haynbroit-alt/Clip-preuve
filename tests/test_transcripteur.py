@@ -27,6 +27,10 @@ def _faux_whisper(beams_out):
             self.end = end
 
     class Seg:
+        # parole nette par défaut : segment gardé même par la passe sans VAD (segment_sur)
+        no_speech_prob = 0.1
+        avg_logprob = -0.3
+
         def __init__(self, words):
             self.words = words
 
@@ -182,14 +186,15 @@ def test_vad_qui_efface_tout_declenche_une_passe_sans_vad_filtree(tmp_path, monk
 
     monkeypatch.setattr(transcripteur, "sh", fake_sh)
     words = transcripteur.transcribe(str(tmp_path), {"duration": 120.0})
-    assert appels == [(1, True), (5, True), (5, False)]
+    # beam 1 avec VAD -> rien -> beam 1 sans VAD (3 mots) ; trop peu pour 120 s -> même chose en beam 5
+    assert appels == [(1, True), (1, False), (5, True), (5, False)]
     assert [w["w"] for w in words] == ["bonjour", "à", "tous"]  # ni hallucination ni segment incertain
     relances = json.loads((tmp_path / "vad_relances.json").read_text(encoding="utf-8"))
     assert relances == [{"chunk": 0, "debut_s": 0, "mots": 3}]
 
 
 def test_pas_de_passe_sans_vad_quand_la_parole_est_trouvee(tmp_path, monkeypatch):
-    mod, beams = _faux_whisper([[(" salut", 0.5, 0.9)]])
+    mod, beams = _faux_whisper([[(" salut", 0.5, 3.5)]])  # 3 s de parole sur 10 s : VAD non suspect
     monkeypatch.setitem(sys.modules, "faster_whisper", mod)
 
     def fake_sh(cmd, **kw):
@@ -199,7 +204,7 @@ def test_pas_de_passe_sans_vad_quand_la_parole_est_trouvee(tmp_path, monkeypatch
         return _Ret()
 
     monkeypatch.setattr(transcripteur, "sh", fake_sh)
-    assert transcripteur.transcribe(str(tmp_path), {"duration": 10.0}) == [{"w": "salut", "s": 0.5, "e": 0.9}]
+    assert transcripteur.transcribe(str(tmp_path), {"duration": 10.0}) == [{"w": "salut", "s": 0.5, "e": 3.5}]
     assert len([b for b in beams if "beam" in b]) == 1
     assert not (tmp_path / "vad_relances.json").exists()
 
@@ -209,3 +214,32 @@ def test_segment_sur_exige_les_deux_indicateurs():
     assert not transcripteur.segment_sur(_seg_whisper([], 0.7, -0.5))
     assert not transcripteur.segment_sur(_seg_whisper([], 0.1, -1.5))
     assert not transcripteur.segment_sur(object())  # indicateurs absents : refusé
+
+
+def test_passe_sans_vad_ecarte_les_hallucinations(tmp_path, monkeypatch):
+    """Le VAD efface presque tout ; la passe sans VAD ajoute une hallucination classique, qui est écartée."""
+    voix = _seg_whisper([(" oui", 1.0, 1.3)], 0.1, -0.3)
+    halluciné = _seg_whisper([(" Merci", 3.0, 3.4), (" d'avoir", 3.5, 3.8), (" regardé", 3.9, 4.3)], 0.95, -0.2)
+
+    class Model:
+        def __init__(self, *a, **k):
+            pass
+
+        def transcribe(self, path, **kw):
+            return ([voix], None) if kw["vad_filter"] else ([voix, halluciné], None)
+
+    mod = types.ModuleType("faster_whisper")
+    mod.WhisperModel = Model
+    monkeypatch.setitem(sys.modules, "faster_whisper", mod)
+
+    def fake_sh(cmd, **kw):
+        if cmd and cmd[0] == "ffmpeg":
+            with open(cmd[-1], "wb") as fh:
+                fh.write(b"")
+        return _Ret()
+
+    monkeypatch.setattr(transcripteur, "sh", fake_sh)
+    words = transcripteur.transcribe(str(tmp_path), {"duration": 10.0})
+    assert [w["w"] for w in words] == ["oui"]  # « Merci d'avoir regardé » (no_speech 0,95) n'entre pas
+    relances = json.loads((tmp_path / "vad_relances.json").read_text(encoding="utf-8"))
+    assert relances == [{"chunk": 0, "debut_s": 0, "mots": 1}]  # passe sans VAD retenue : signalée

@@ -167,7 +167,7 @@ def test_echec_ecrit_dans_progress(tmp_path, monkeypatch):
 def _brancher(monkeypatch, verdicts):
     meta, words, sents, cand, _ = _monde()
     suite = iter(verdicts)
-    monkeypatch.setattr(orchestrator.transcripteur, "run_agent", lambda run, src: (meta, words, []))
+    monkeypatch.setattr(orchestrator.transcripteur, "run_agent", lambda run, src, align="whisper": (meta, words, []))
     monkeypatch.setattr(orchestrator.chercheur, "run_agent", lambda run, w, sil, top=6, exclude=(): (sents, [cand]))
     monkeypatch.setattr(orchestrator.juge, "run_agent", lambda run, w, cands: [cand])
 

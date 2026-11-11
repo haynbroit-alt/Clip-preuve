@@ -21,7 +21,7 @@ Paste a video link or file (up to 3 hours). Clip-preuve returns one 20–90s ver
 `./install.sh` prépare le venv, llama.cpp et le modèle local (Qwen2.5-7B, CPU, 0 € d'API).
 Optionnel : `export OPENROUTER_API_KEY=...` pour un modèle OpenRouter à la place. La clé reste dans l'environnement, elle n'est ni affichée ni journalisée.
 
-Régénérer sans refaire la transcription : `./clip "<lien>" --regenerer`.
+Régénérer sans refaire la transcription : `./clip "<lien>" --regenerer`. Chaque clip garde sa carte (`preuve_<n>.json` / `.md`) ; `preuve.json` / `preuve.md` sont toujours la dernière.
 
 ![Démo : un lien devient un clip vertical avec sa carte de preuve](docs/demo.gif)
 

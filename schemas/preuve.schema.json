@@ -53,6 +53,43 @@
     "citation_fin": {"type": "string"},
     "pourquoi_ce_moment": {"type": ["string", "null"]},
     "phrase_cle": {"type": ["string", "null"]},
+    "pourquoi_ce_moment_source": {"type": "string"},
+    "phrase_cle_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "texte", "texte_juge", "debut_s", "fin_s", "preuve"],
+      "properties": {
+        "verdict": {"enum": ["PROUVÉ", "INCONNU"]},
+        "texte": {"type": ["string", "null"]},
+        "texte_juge": {"type": ["string", "null"]},
+        "debut_s": {"type": ["number", "null"]},
+        "fin_s": {"type": ["number", "null"]},
+        "preuve": {"type": "string"}
+      },
+      "if": {"properties": {"verdict": {"const": "INCONNU"}}},
+      "then": {"properties": {"texte": {"type": "null"}}},
+      "else": {"properties": {"texte": {"type": "string"}}}
+    },
+    "transcription": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relances_sans_vad"],
+      "properties": {
+        "relances_sans_vad": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["chunk", "debut_s", "mots"],
+            "properties": {
+              "chunk": {"type": "integer"},
+              "debut_s": {"type": "number"},
+              "mots": {"type": "integer"}
+            }
+          }
+        }
+      }
+    },
     "notes_juge": {
       "type": "object",
       "additionalProperties": false,

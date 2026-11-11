@@ -44,5 +44,6 @@ Une citation de correction ne compte que si elle se retrouve dans le contexte *a
 ## Entrées
 
 - CLI : `./clip` appelle `orchestrator.py`.
-- Web : `./clip --ui` lance `app.py` (FastAPI) et `index.html`. Un job à la fois.
+- Web : `./clip --ui` lance `app.py` (FastAPI) et `index.html`. Un job à la fois. Le serveur n'accepte que les hôtes locaux (`CLIP_HOSTS` pour en ajouter), refuse les écritures venues d'un autre site et plafonne l'upload (`CLIP_MAX_UPLOAD_MO`, 8 Go par défaut).
+- Régénérer : `preuve_<n>.json` / `preuve_<n>.md` conservent la carte de chaque clip ; `preuve.json` / `preuve.md` sont la dernière.
 - Comparaison manuelle : `python compare.py runs/<id> --manuel clip_humain.mp4`. Sans fichier de référence, le verdict est INCONNU.

@@ -1,7 +1,7 @@
 """Agent JUGE (scoring LLM, JSON strict) : 5 notes 0-10 + raison + phrase clé.
 
 Artefact : scores.json. Score final = moyenne pondérée LLM (80 %) + pré-tri normalisé (20 %).
-Cas limites : JSON invalide -> relances puis candidat ignoré ; tous ignorés -> ÉCHEC.
+Cas limites : JSON invalide ou note non entière -> candidat ignoré (pas d'ÉCHEC du run) ; tous ignorés -> ÉCHEC.
 """
 
 from __future__ import annotations
@@ -47,8 +47,9 @@ def run_agent(run: str, words: list[dict[str, Any]], cands: list[dict[str, Any]]
                 notes = notes_juge(r)
                 llm = sum(W[x] * max(0, min(10, getattr(notes, x))) for x in KEYS) / sum(W.values())
                 cache[key] = {**r, "llm_score": round(llm, 2)}
-            except RuntimeError as e:
-                cache[key] = {"erreur": str(e), "llm_score": None}
+            except (RuntimeError, ValueError, TypeError) as e:
+                # RuntimeError : LLM injoignable ; ValueError/TypeError : note non entière ("8/10", null…)
+                cache[key] = {"erreur": f"{type(e).__name__} : {e}"[:300], "llm_score": None}
             jsave(path, cache)
         c["juge"] = cache[key]
     ok = [c for c in cands if c["juge"].get("llm_score") is not None]

@@ -17,19 +17,21 @@ button.sec{background:#2a2f3a;color:#eee}.bar{height:10px;background:#222;border
 let id=null,t=null;const $=s=>document.querySelector(s);
 $('#f').onsubmit=async e=>{e.preventDefault();$('#r').innerHTML='';const r=await fetch('/api/clip',{method:'POST',body:new FormData(e.target)});
  if(!r.ok){alert('Donnez un lien ou un fichier');return}id=(await r.json()).id;poll()};
-async function poll(){clearTimeout(t);$('#p').hidden=false;const j=await (await fetch('/api/job/'+id)).json();const p=j.progress;
+async function poll(){clearTimeout(t);$('#p').hidden=false;const j=await (await fetch('/api/job/'+encodeURIComponent(id))).json();const p=j.progress;
  $('#b').style.width=p.pct+'%';$('#m').textContent=p.step+' — '+(p.msg||'');
- if(p.step==='ÉCHEC'){$('#r').innerHTML='<p class="CONFLIT">ÉCHEC : '+p.msg+'</p>';return}
+ if(p.step==='ÉCHEC'){$('#r').innerHTML='<p class="CONFLIT">ÉCHEC : '+esc(p.msg)+'</p>';return}
  if(j.carte){show(j.carte);return}t=setTimeout(poll,2000)}
-function esc(s){return String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function show(c){const F=c.falsificateur,L={hors_contexte:'Hors contexte ?',info_prealable:"Besoin d'info avant ?",contredit_apres:'Contredit juste après ?',coupe_mi_idee:'Coupé en pleine idée ?'};
- $('#r').innerHTML=`<div class="res"><video controls src="/api/job/${id}/fichier/${c.clip.fichier}?t=${Date.now()}"></video><div class="card">
- <h3>Statut : <span class="${c.statut}">${c.statut}</span></h3>${c.avertissement?'<p class="warn">⚠️ '+esc(c.avertissement)+'</p>':''}
- <h4>Pourquoi ce moment</h4><p>${esc(c.pourquoi_ce_moment)}</p><p><i>« ${esc(c.phrase_cle)} »</i></p>
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function show(c){const V=c.phrase_cle_verification,R=(c.transcription&&c.transcription.relances_sans_vad)||[],F=c.falsificateur,L={hors_contexte:'Hors contexte ?',info_prealable:"Besoin d'info avant ?",contredit_apres:'Contredit juste après ?',coupe_mi_idee:'Coupé en pleine idée ?'};
+ $('#r').innerHTML=`<div class="res"><video controls src="/api/job/${encodeURIComponent(id)}/fichier/${encodeURIComponent(c.clip.fichier)}?t=${Date.now()}"></video><div class="card">
+ <h3>Statut : <span class="${esc(c.statut)}">${esc(c.statut)}</span></h3>${V&&V.verdict!=='PROUVÉ'?'<p class="INCONNU">Phrase clé : INCONNU — '+esc(V.preuve)+'</p>':''}
+ ${c.avertissement?'<p class="warn">⚠️ '+esc(c.avertissement)+'</p>':''}
+ ${R.length?'<p class="warn">Transcription : '+R.length+' morceau(x) repassé(s) sans filtre de parole (VAD), mots à vérifier à l\'écoute.</p>':''}
+ <h4>Pourquoi ce moment <small>(${esc(c.pourquoi_ce_moment_source||"avis de l'IA, non vérifié")})</small></h4><p>${esc(c.pourquoi_ce_moment)}</p>${c.phrase_cle?'<p><i>« '+esc(c.phrase_cle)+' »</i>'+(V?' <small>('+esc(V.preuve)+')</small>':'')+'</p>':''}
  <p><b>${c.clip.debut} → ${c.clip.fin}</b> (${c.clip.duree_s} s)<br>Commence : « ${esc(c.citation_debut)} … »<br>Finit : « … ${esc(c.citation_fin)} »</p>
- <h4>Falsificateur</h4><table>${Object.keys(F).map(k=>`<tr><td>${L[k]}</td><td class="${F[k].verdict}">${F[k].verdict}</td><td>${esc(F[k].preuve)}</td></tr>`).join('')}</table>
+ <h4>Falsificateur</h4><table>${Object.keys(F).map(k=>`<tr><td>${L[k]}</td><td class="${esc(F[k].verdict)}">${esc(F[k].verdict)}</td><td>${esc(F[k].preuve)}</td></tr>`).join('')}</table>
  <p><small>Coût mesuré : ${c.cout.cout_eur} € · ${c.cout.cout_eur_par_heure} €/h de source (objectif &lt; 0,10 €/h : ${c.cout.objectif_0_10_eur_h}) · ${c.cout.appels_llm} appels LLM</small></p>
- <button class="sec" onclick="regen()">Régénérer (gratuit)</button> <a href="/api/job/${id}/fichier/preuve.json" style="color:#9aa">carte JSON</a></div></div>`}
+ <button class="sec" onclick="regen()">Régénérer (gratuit)</button> <a href="/api/job/${encodeURIComponent(id)}/fichier/preuve.json" style="color:#9aa">carte JSON</a></div></div>`}
 const q=new URLSearchParams(location.search).get('id');if(q){id=q;poll()}
-async function regen(){await fetch('/api/job/'+id+'/regenerer',{method:'POST'});$('#r').innerHTML='';setTimeout(poll,1500)}
+async function regen(){await fetch('/api/job/'+encodeURIComponent(id)+'/regenerer',{method:'POST'});$('#r').innerHTML='';setTimeout(poll,1500)}
 </script></body></html>

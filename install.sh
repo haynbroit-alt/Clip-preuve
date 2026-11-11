@@ -3,6 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 command -v ffmpeg >/dev/null || { echo "Installez ffmpeg (sudo apt install ffmpeg) puis relancez."; exit 1; }
+python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' || { echo "Python 3.11 ou plus est requis (yt-dlp épinglé l'exige). Version trouvée : $(python3 -V 2>&1)"; exit 1; }
 command -v node >/dev/null || echo "Conseil : installez node (YouTube ne donne la vidéo qu'avec un runtime JS)."
 python3 -m venv .venv && .venv/bin/pip install -q --upgrade pip && .venv/bin/pip install -q -r requirements.txt
 mkdir -p llm models && cd llm

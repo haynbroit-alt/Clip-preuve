@@ -16,7 +16,7 @@ import shutil
 import traceback
 from typing import Any, cast
 
-from agents import chercheur, falsificateur, greffier, juge, monteur, transcripteur
+from agents import chercheur, falsificateur, greffier, integrite, juge, monteur, transcripteur
 from agents.common import jload, jsave, progress, timed
 from agents.edl import edl, fcpxml
 from agents.livraison import CRITERES, exporter, livraison_autorisee
@@ -104,7 +104,7 @@ def _candidats(
         nom = f"candidat_{cand['id']}.mp4"
         _clip, crop = _ecrire_montage(run, meta, words, verdict, nom)
         card = greffier.run_agent(run, meta, words, verdict, cand, crop, _clip, certifie=False)
-        jsave(os.path.join(run, f"preuve_{cand['id']}.json"), card)
+        card = integrite.sceller(run, card, f"preuve_{cand['id']}")
         cartes.append(card)
     return cartes
 
@@ -155,6 +155,7 @@ def main(
         if n > 1:
             archiver_derniere_carte(run)
         card = greffier.run_agent(run, meta, words, verdict, cand, crop, clip, certifie=True)
+        card = integrite.sceller(run, card)
         md_path = os.path.join(run, "preuve.md")
         with open(md_path, encoding="utf-8") as handle:
             md_certifie = handle.read()

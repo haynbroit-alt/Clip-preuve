@@ -70,6 +70,28 @@
       "then": {"properties": {"texte": {"type": "null"}}},
       "else": {"properties": {"texte": {"type": "string"}}}
     },
+    "integrite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithme", "fichiers", "code", "empreinte_carte"],
+      "properties": {
+        "algorithme": {"const": "sha256"},
+        "fichiers": {
+          "type": "object",
+          "additionalProperties": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+        },
+        "code": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["commit", "modifie"],
+          "properties": {
+            "commit": {"type": ["string", "null"]},
+            "modifie": {"type": ["boolean", "null"]}
+          }
+        },
+        "empreinte_carte": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
     "transcription": {
       "type": "object",
       "additionalProperties": false,

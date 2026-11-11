@@ -113,3 +113,30 @@ def test_candidat_en_echec_est_ignore_puis_tous_echouent(tmp_path, monkeypatch):
             [],
             [{"id": "c1", "s": 0.0, "e": 20.0, "text": "x", "pre": 1.0}],
         )
+
+
+@pytest.mark.parametrize("note", ["8/10", "7.5", None, [8], {"n": 8}])
+def test_note_mal_formee_ignore_le_candidat_sans_faire_echouer_le_run(tmp_path, monkeypatch, note):
+    """Régression : une note non entière (OpenRouter sans schéma) levait ValidationError/TypeError
+    et faisait échouer tout le run."""
+
+    def call(run, role, system, user, schema, max_tokens=400):
+        if "MAL_FORME" in user:
+            return {**DIX, "accroche_3s": note}
+        return DIX
+
+    monkeypatch.setattr(juge, "call_json", call)
+    cands = [
+        {"id": "mal", "s": 0.0, "e": 20.0, "text": "MAL_FORME", "pre": 9.0},
+        {"id": "ok", "s": 30.0, "e": 60.0, "text": "OK", "pre": 1.0},
+    ]
+    ranked = juge.run_agent(str(tmp_path), [], cands)
+    assert [c["id"] for c in ranked] == ["ok"]
+    assert cands[0]["juge"]["llm_score"] is None
+    assert cands[0]["juge"]["erreur"].split(" : ")[0] in ("ValidationError", "TypeError")
+
+
+def test_toutes_les_notes_mal_formees_donnent_un_echec_explicite(tmp_path, monkeypatch):
+    monkeypatch.setattr(juge, "call_json", lambda *a, **k: {**DIX, "payoff": "huit"})
+    with pytest.raises(RuntimeError, match="aucun candidat"):
+        juge.run_agent(str(tmp_path), [], [{"id": "c1", "s": 0.0, "e": 20.0, "text": "x", "pre": 1.0}])

@@ -90,7 +90,8 @@ def test_cache_words_json_ne_charge_pas_whisper(tmp_path, monkeypatch):
 
 
 def test_aucun_mot_est_un_echec(tmp_path, monkeypatch):
-    mod, _beams = _faux_whisper([[]])
+    # 2e lot : la passe sans VAD (garde-fou) ne trouve rien non plus
+    mod, beams = _faux_whisper([[], []])
     monkeypatch.setitem(sys.modules, "faster_whisper", mod)
 
     def fake_sh(cmd, **kw):
@@ -102,6 +103,7 @@ def test_aucun_mot_est_un_echec(tmp_path, monkeypatch):
     monkeypatch.setattr(transcripteur, "sh", fake_sh)
     with pytest.raises(RuntimeError, match="aucun mot"):
         transcripteur.transcribe(str(tmp_path), {"duration": 10.0})
+    assert len([b for b in beams if "beam" in b]) == 2
 
 
 def test_lien_ou_fichier_au_dela_de_3h_refuse(tmp_path, monkeypatch):
@@ -134,3 +136,76 @@ def test_silences_parses_puis_reutilises(tmp_path, monkeypatch):
     assert transcripteur.silences(str(tmp_path)) == [[1.25, 1.8]]
     monkeypatch.setattr(transcripteur, "sh", lambda *a, **k: (_ for _ in ()).throw(AssertionError("ffmpeg")))
     assert transcripteur.silences(str(tmp_path)) == [[1.25, 1.8]]
+
+
+def _seg_whisper(mots, no_speech, logprob):
+    class Word:
+        def __init__(self, word, start, end):
+            self.word, self.start, self.end = word, start, end
+
+    class Seg:
+        pass
+
+    seg = Seg()
+    seg.words = [Word(w, a, b) for w, a, b in mots]
+    seg.no_speech_prob = no_speech
+    seg.avg_logprob = logprob
+    return seg
+
+
+def test_vad_qui_efface_tout_declenche_une_passe_sans_vad_filtree(tmp_path, monkeypatch):
+    """Régression (AI-Youtube-Shorts-Generator n°56) : musique sur la voix -> VAD efface tout -> ÉCHEC."""
+    appels = []
+    sur = _seg_whisper([(" bonjour", 1.0, 1.4), (" à", 1.5, 1.6), (" tous", 1.7, 2.0)], 0.1, -0.3)
+    halluciné = _seg_whisper([(" Sous-titres", 5.0, 5.5), (" réalisés", 5.6, 6.0)], 0.9, -0.2)
+    incertain = _seg_whisper([(" blabla", 8.0, 8.4)], 0.2, -1.6)
+
+    class Model:
+        def __init__(self, *a, **k):
+            pass
+
+        def transcribe(self, path, **kw):
+            appels.append((kw["beam_size"], kw["vad_filter"]))
+            if kw["vad_filter"]:
+                return [], None
+            return [sur, halluciné, incertain], None
+
+    mod = types.ModuleType("faster_whisper")
+    mod.WhisperModel = Model
+    monkeypatch.setitem(sys.modules, "faster_whisper", mod)
+
+    def fake_sh(cmd, **kw):
+        if cmd and cmd[0] == "ffmpeg":
+            with open(cmd[-1], "wb") as fh:
+                fh.write(b"")
+        return _Ret()
+
+    monkeypatch.setattr(transcripteur, "sh", fake_sh)
+    words = transcripteur.transcribe(str(tmp_path), {"duration": 120.0})
+    assert appels == [(1, True), (5, True), (5, False)]
+    assert [w["w"] for w in words] == ["bonjour", "à", "tous"]  # ni hallucination ni segment incertain
+    relances = json.loads((tmp_path / "vad_relances.json").read_text(encoding="utf-8"))
+    assert relances == [{"chunk": 0, "debut_s": 0, "mots": 3}]
+
+
+def test_pas_de_passe_sans_vad_quand_la_parole_est_trouvee(tmp_path, monkeypatch):
+    mod, beams = _faux_whisper([[(" salut", 0.5, 0.9)]])
+    monkeypatch.setitem(sys.modules, "faster_whisper", mod)
+
+    def fake_sh(cmd, **kw):
+        if cmd and cmd[0] == "ffmpeg":
+            with open(cmd[-1], "wb") as fh:
+                fh.write(b"")
+        return _Ret()
+
+    monkeypatch.setattr(transcripteur, "sh", fake_sh)
+    assert transcripteur.transcribe(str(tmp_path), {"duration": 10.0}) == [{"w": "salut", "s": 0.5, "e": 0.9}]
+    assert len([b for b in beams if "beam" in b]) == 1
+    assert not (tmp_path / "vad_relances.json").exists()
+
+
+def test_segment_sur_exige_les_deux_indicateurs():
+    assert transcripteur.segment_sur(_seg_whisper([], 0.1, -0.5))
+    assert not transcripteur.segment_sur(_seg_whisper([], 0.7, -0.5))
+    assert not transcripteur.segment_sur(_seg_whisper([], 0.1, -1.5))
+    assert not transcripteur.segment_sur(object())  # indicateurs absents : refusé

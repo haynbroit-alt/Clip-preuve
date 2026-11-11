@@ -162,3 +162,66 @@ def test_echec_ecrit_dans_progress(tmp_path, monkeypatch):
     assert progress["step"] == "ÉCHEC"
     assert "boom sélection" in progress["msg"]
     assert (run / "src.txt").read_text(encoding="utf-8") == "https://example.com/v"
+
+
+def _brancher(monkeypatch, verdicts):
+    meta, words, sents, cand, _ = _monde()
+    suite = iter(verdicts)
+    monkeypatch.setattr(orchestrator.transcripteur, "run_agent", lambda run, src: (meta, words, []))
+    monkeypatch.setattr(orchestrator.chercheur, "run_agent", lambda run, w, sil, top=6, exclude=(): (sents, [cand]))
+    monkeypatch.setattr(orchestrator.juge, "run_agent", lambda run, w, cands: [cand])
+
+    def falsif(run, sents, ranked, max_it=3):
+        v = next(suite)
+        return v, cand, [v]
+
+    monkeypatch.setattr(orchestrator.falsificateur, "run_agent", falsif)
+    monkeypatch.setattr(
+        orchestrator.monteur,
+        "run_agent",
+        lambda run, meta, words, s, e, name="clip.mp4": (os.path.join(run, name), {"methode": "test"}),
+    )
+
+
+def test_regenerer_conserve_chaque_carte(tmp_path, monkeypatch):
+    """Régression : la régénération écrasait la carte 1 et faisait disparaître preuve.md."""
+    _, _, _, _, verdict = _monde()
+    bornes = [(1.5, 28.0), (2.0, 27.0), (3.0, 26.0)]
+    _brancher(monkeypatch, [dict(verdict, s=s, e=e) for s, e in bornes])
+    run = tmp_path / "run"
+    orchestrator.main("https://example.com/v", str(run))
+    carte1_json = (run / "preuve.json").read_bytes()
+    carte1_md = (run / "preuve.md").read_bytes()
+    orchestrator.main("https://example.com/v", str(run), regen=True)
+    carte2_json = (run / "preuve.json").read_bytes()
+    orchestrator.main("https://example.com/v", str(run), regen=True)
+
+    def carte(nom):
+        return json.loads((run / nom).read_text(encoding="utf-8"))
+
+    # chaque clip garde sa carte, octet pour octet
+    assert (run / "preuve_1.json").read_bytes() == carte1_json
+    assert (run / "preuve_1.md").read_bytes() == carte1_md
+    assert (run / "preuve_2.json").read_bytes() == carte2_json
+    for n, (s, e) in enumerate(bornes, start=1):
+        c = carte(f"preuve_{n}.json")
+        assert c["clip"]["fichier"] == ("clip.mp4" if n == 1 else f"clip_{n}.mp4")
+        assert (c["clip"]["debut_s"], c["clip"]["fin_s"]) == (s, e)
+        assert (run / f"preuve_{n}.md").exists()
+    # preuve.json / preuve.md = la dernière carte (ce que lit l'interface et ce qu'affiche la CLI)
+    assert carte("preuve.json") == carte("preuve_3.json")
+    assert (run / "preuve.md").read_bytes() == (run / "preuve_3.md").read_bytes()
+
+
+def test_archivage_ne_reecrit_jamais_une_copie_existante(tmp_path):
+    run = tmp_path
+    (run / "preuve.json").write_text(json.dumps({"clip": {"fichier": "clip_2.mp4"}}), encoding="utf-8")
+    (run / "preuve.md").write_text("nouvelle", encoding="utf-8")
+    (run / "preuve_2.md").write_text("ancienne", encoding="utf-8")
+    orchestrator.archiver_derniere_carte(str(run))
+    assert (run / "preuve_2.md").read_text(encoding="utf-8") == "ancienne"
+    assert (run / "preuve_2.json").exists()
+    assert orchestrator.numero_clip("clip.mp4") == 1
+    assert orchestrator.numero_clip("clip_12.mp4") == 12
+    assert orchestrator.numero_clip("autre.mp4") is None
+    orchestrator.archiver_derniere_carte(str(tmp_path / "vide"))  # pas de carte : rien à faire

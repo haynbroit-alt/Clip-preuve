@@ -3,7 +3,7 @@ name = "clip-preuve"
 version = "0.3.0"
 description = "Un lien vidéo, un clip vertical, une carte de preuve."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 authors = [{ name = "Lhassan Charfa" }]
 dependencies = [
@@ -26,6 +26,7 @@ dev = [
     "mypy==2.4.1",
     "jsonschema==4.26.0",
     "pre-commit==4.7.0",
+    "httpx2==2.16.0",
 ]
 
 [tool.ruff]

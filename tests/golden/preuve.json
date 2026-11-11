@@ -16,7 +16,16 @@
   "citation_debut": "Pourquoi cette histoire commence ici et pas ailleurs dans le récit complet",
   "citation_fin": "histoire commence ici et pas ailleurs dans le récit complet aujourd'hui vraiment",
   "pourquoi_ce_moment": "la chute est nette",
+  "pourquoi_ce_moment_source": "avis du juge (IA), non vérifié",
   "phrase_cle": "cette histoire",
+  "phrase_cle_verification": {
+    "verdict": "PROUVÉ",
+    "texte": "cette histoire",
+    "texte_juge": "cette histoire",
+    "debut_s": 10.4,
+    "fin_s": 11.1,
+    "preuve": "retrouvée mot pour mot dans la transcription du clip"
+  },
   "notes_juge": {
     "accroche_3s": 8,
     "autonomie": 7,
@@ -69,5 +78,8 @@
   },
   "temps_s": {
     "juge": 1.25
+  },
+  "transcription": {
+    "relances_sans_vad": []
   }
 }

@@ -13,7 +13,7 @@ Paste a video link or file (up to 3 hours). Clip-preuve returns one 20–90s ver
 ## Utilisation
 
 ```bash
-./install.sh                                  # une fois (Linux, ffmpeg, Python 3.10+)
+./install.sh                                  # une fois (Linux, ffmpeg, Python 3.11+)
 ./clip "https://www.youtube.com/watch?v=..."  # runs/<id>/clip.mp4 + preuve.md
 ./clip --ui                                   # http://127.0.0.1:8000
 ```
@@ -21,11 +21,7 @@ Paste a video link or file (up to 3 hours). Clip-preuve returns one 20–90s ver
 `./install.sh` prépare le venv, llama.cpp et le modèle local (Qwen2.5-7B, CPU, 0 € d'API).
 Optionnel : `export OPENROUTER_API_KEY=...` pour un modèle OpenRouter à la place. La clé reste dans l'environnement, elle n'est ni affichée ni journalisée.
 
-Régénérer sans refaire la transcription : `./clip "<lien>" --regenerer`.
-Le dossier de run est l'empreinte du fichier (`runs/<hash>/`) : un échec reprend la transcription déjà écrite.
-Un clip dont le Falsificateur contient un CONFLIT n'est pas exporté.
-`./clip "<lien>" --candidats 2` ajoute les candidats suivants, chacun avec une carte marquée non certifiée, plus `clip.edl` et `clip.fcpxml`.
-`./clip "<lien>" --align whisperx` aligne avec wav2vec2 français si le paquet `whisperx` est installé.
+Régénérer sans refaire la transcription : `./clip "<lien>" --regenerer`. Chaque clip garde sa carte (`preuve_<n>.json` / `.md`) ; `preuve.json` / `preuve.md` sont toujours la dernière.
 
 ![Démo : un lien devient un clip vertical avec sa carte de preuve](docs/demo.gif)
 
@@ -35,7 +31,7 @@ L'interface : un champ, un bouton, la progression, la vidéo, « Pourquoi ce mom
 
 ## Carte de preuve
 
-Chaque run écrit `preuve.json` et `preuve.md`. Les citations sont les mots de la transcription, pas une réécriture du modèle. Les quatre tests du Falsificateur y figurent un par un. Si rien ne tient, le statut est **INCONNU** et l'avertissement est en tête.
+Chaque run écrit `preuve.json` et `preuve.md`. Les citations sont les mots de la transcription, pas une réécriture du modèle. La phrase clé proposée par le juge n'est affichée que si elle est retrouvée dans la transcription du clip ; sinon la carte indique « Phrase clé : INCONNU ». « Pourquoi ce moment » est l'avis du juge (IA), signalé comme non vérifié. Les quatre tests du Falsificateur y figurent un par un. Si rien ne tient, le statut est **INCONNU** et l'avertissement est en tête.
 
 - Exemple réel (conflit restant) : [docs/exemple_preuve.md](docs/exemple_preuve.md)
 - Exemple sans conflit, avec un critère encore inconnu : [docs/exemple_preuve_sans_conflit.md](docs/exemple_preuve_sans_conflit.md)

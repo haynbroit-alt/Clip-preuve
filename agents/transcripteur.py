@@ -4,6 +4,8 @@ Artefacts : source.json, audio.wav, chunks/*.json, words.json, silences.json.
 Cas limites : chunk anormalement troué (< 60 mots/min) -> repassé en beam 5
 (mesuré : 276 -> 2033 mots sur un chunk Thinkerview) ;
 vidéo > 3 h 05 refusée (ÉCHEC explicite) ; lien privé/géobloqué -> erreur yt-dlp remontée ;
+chunk vide après 2 passes (musique sur la voix) -> 3e passe sans VAD, segments sûrs seulement,
+notée dans vad_relances.json ;
 chunk déjà transcrit -> réutilisé (reprise) ; aucun mot détecté -> ÉCHEC (musique seule, silence).
 """
 
@@ -24,7 +26,14 @@ from .vad import choisir_mots, vad_ecrase
 MAX_SEC = 3 * 3600 + 300
 CHUNK = 600
 MODEL = os.environ.get("CLIP_WHISPER", "small")
+NO_SPEECH_MAX = 0.6  # passe sans VAD : segment gardé seulement s'il est probablement parlé…
+LOGPROB_MIN = -1.0  # … et transcrit avec assurance
 MODELS_DIR = os.environ.get("CLIP_WHISPER_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "models"))
+
+
+def segment_sur(seg: Any) -> bool:
+    """Passe sans VAD : un segment n'est gardé que s'il est probablement parlé et transcrit avec assurance."""
+    return bool(getattr(seg, "no_speech_prob", 1.0) < NO_SPEECH_MAX and getattr(seg, "avg_logprob", -9.0) > LOGPROB_MIN)
 
 
 def ingest(run: str, src: str) -> dict[str, Any]:
@@ -166,6 +175,29 @@ def transcribe(run: str, meta: dict[str, Any], lang: str = "fr", align: str = "w
                     ws = w2
                 if len(ws) >= 60 * cdur / 60 or cdur < 60:
                     break
+            if not ws:
+                # garde-fou VAD : le filtre de parole peut tout effacer quand de la musique couvre la voix.
+                # 3e passe sans VAD, en ne gardant que les segments que Whisper juge parlés et sûrs
+                # (sans VAD, Whisper hallucine sur la musique) ; la relance est notée sur la carte.
+                segs, _ = model.transcribe(
+                    cw,
+                    language=lang,
+                    beam_size=5,
+                    word_timestamps=True,
+                    vad_filter=False,
+                    condition_on_previous_text=False,
+                )
+                ws = [
+                    {"w": w.word.strip(), "s": round(w.start + i * CHUNK, 3), "e": round(w.end + i * CHUNK, 3)}
+                    for s in segs
+                    if getattr(s, "no_speech_prob", 0.0) < NO_SPEECH_MAX
+                    and getattr(s, "avg_logprob", 0.0) > LOGPROB_MIN
+                    for w in (s.words or [])
+                    if w.word.strip()
+                ]
+                relances = cast(list[dict[str, Any]], jload(os.path.join(run, "vad_relances.json"), []))
+                relances.append({"chunk": i, "debut_s": i * CHUNK, "mots": len(ws)})
+                jsave(os.path.join(run, "vad_relances.json"), relances)
             jsave(cj, ws)
             os.remove(cw)
         words += jload(cj)

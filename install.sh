@@ -13,3 +13,4 @@ MODEL_URL=${CLIP_MODEL_URL:-https://huggingface.co/bartowski/Qwen2.5-7B-Instruct
 [ -f model.gguf ] || curl -L -o model.gguf "$MODEL_URL"
 [ -f blaze_face_short_range.tflite ] || curl -sL -o blaze_face_short_range.tflite https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite
 echo "OK. Lancez : ./clip <lien YouTube ou fichier>   ou   ./clip --ui"
+echo "Optionnel, non installé ici : pip install whisperx && ./clip <lien> --align whisperx"

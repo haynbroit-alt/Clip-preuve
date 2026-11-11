@@ -41,6 +41,8 @@ Pour le clip retenu, le Falsificateur répond, puis un garde-fou lexical peut ag
 
 Une citation de correction ne compte que si elle se retrouve dans le contexte *après* le clip. Le garde-fou force **CONFLIT** quand le clip porte une affirmation du type « l'erreur que tout le monde fait » et que la correction (« c'est faux », « en réalité »…) arrive dans les 40 secondes suivantes, même si le modèle a répondu « aucune ».
 
+Le verrou de livraison (`agents/livraison.py`) relit le verdict déjà produit et refuse d'écrire le fichier si un critère est CONFLIT. Le cadrage locuteur (`agents/locuteur.py`) ne change de visage qu'après 1,5 s de bouche active pendant la parole. L'évaluation des coupes au milieu d'une idée est dans `agents/eval_bornes.py` et `tests/eval/`.
+
 ## Entrées
 
 - CLI : `./clip` appelle `orchestrator.py`.

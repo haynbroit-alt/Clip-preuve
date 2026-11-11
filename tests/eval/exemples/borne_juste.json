@@ -1,0 +1,9 @@
+{
+  "video": "synthetique-borne-juste",
+  "idees": [
+    {"id": "i1", "debut_s": 0.0, "fin_s": 12.0}
+  ],
+  "clips": [
+    {"fichier": "clip.mp4", "debut_s": 0.0, "fin_s": 12.0}
+  ]
+}

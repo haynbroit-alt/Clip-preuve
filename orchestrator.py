@@ -14,11 +14,14 @@ import os
 import re
 import shutil
 import traceback
-from typing import Any
+from typing import Any, cast
 
 from agents import chercheur, falsificateur, greffier, juge, monteur, transcripteur
 from agents.common import jload, jsave, progress, timed
+from agents.edl import edl, fcpxml
+from agents.livraison import CRITERES, exporter, livraison_autorisee
 from agents.log import logger
+from agents.reprise import dossier_pour
 
 RUNS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs")
 
@@ -56,7 +59,7 @@ def main(src: str, run: str | None = None, regen: bool = False) -> tuple[str, di
     with open(os.path.join(run, "src.txt"), "w") as f:
         f.write(src)
     try:
-        meta, words, sil = transcripteur.run_agent(run, src)
+        meta, words, sil = transcripteur.run_agent(run, src, align=align)
         hist = jload(os.path.join(run, "livres.json"), [])
         n = len(hist) + 1 if regen else 1
         if not regen:
@@ -96,8 +99,10 @@ if __name__ == "__main__":  # pragma: no cover
     ap.add_argument("src")
     ap.add_argument("--run")
     ap.add_argument("--regenerer", action="store_true")
+    ap.add_argument("--align", choices=["whisper", "whisperx"], default="whisper")
+    ap.add_argument("--candidats", type=int, default=0)
     a = ap.parse_args()
-    r, c = main(a.src, a.run, a.regenerer)
+    r, c = main(a.src, a.run, a.regenerer, a.align, a.candidats)
     print(
         f"\nCLIP : {os.path.join(r, c['clip']['fichier'])}\n"
         f"PREUVE : {os.path.join(r, 'preuve.md')}\nSTATUT : {c['statut']}"

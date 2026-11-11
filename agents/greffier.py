@@ -100,6 +100,7 @@ def run_agent(
     cand: dict[str, Any],
     crop: dict[str, Any],
     clip_path: str,
+    certifie: bool = True,
 ) -> dict[str, Any]:
     s, e = verdict["s"], verdict["e"]
     mots_clip = [w for w in words if s - 0.05 <= w["s"] and w["e"] <= e + 0.05]
@@ -135,6 +136,7 @@ def run_agent(
         "bornes_ajustees": bornes_ajustees,
         "falsificateur": verdict["final"],
         "statut": verdict["statut"],
+        "certifie": certifie,
         "avertissement": verdict.get("avertissement"),
         "iterations_falsificateur": verdict["iteration"],
         "recadrage": crop,
@@ -145,6 +147,12 @@ def run_agent(
     }
     jsave(os.path.join(run, "preuve.json"), card)
     F = card["falsificateur"]
+    md = [
+        f"# Carte de preuve — statut : {card['statut']}",
+        "",
+        f"**Certifié** : {'oui' if card['certifie'] else 'non'}",
+        "",
+    ]
     md = [f"# Carte de preuve — statut : {card['statut']}", ""]
     if verif["verdict"] != "PROUVÉ":
         md += [f"> Phrase clé : INCONNU — {verif['preuve']}.", ""]

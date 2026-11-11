@@ -59,6 +59,7 @@
     }
   },
   "statut": "PROUVÉ",
+  "certifie": true,
   "avertissement": null,
   "iterations_falsificateur": 1,
   "recadrage": {

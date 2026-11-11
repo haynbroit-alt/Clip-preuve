@@ -31,7 +31,7 @@ L'interface : un champ, un bouton, la progression, la vidéo, « Pourquoi ce mom
 
 ## Carte de preuve
 
-Chaque run écrit `preuve.json` et `preuve.md`. Les citations sont les mots de la transcription, pas une réécriture du modèle. Les quatre tests du Falsificateur y figurent un par un. Si rien ne tient, le statut est **INCONNU** et l'avertissement est en tête.
+Chaque run écrit `preuve.json` et `preuve.md`. Les citations sont les mots de la transcription, pas une réécriture du modèle. La phrase clé proposée par le juge n'est affichée que si elle est retrouvée dans la transcription du clip ; sinon la carte indique « Phrase clé : INCONNU ». « Pourquoi ce moment » est l'avis du juge (IA), signalé comme non vérifié. Les quatre tests du Falsificateur y figurent un par un. Si rien ne tient, le statut est **INCONNU** et l'avertissement est en tête.
 
 - Exemple réel (conflit restant) : [docs/exemple_preuve.md](docs/exemple_preuve.md)
 - Exemple sans conflit, avec un critère encore inconnu : [docs/exemple_preuve_sans_conflit.md](docs/exemple_preuve_sans_conflit.md)

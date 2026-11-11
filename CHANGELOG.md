@@ -11,6 +11,13 @@ Correctifs de fiabilité et de sécurité, sans changer la sélection, le Falsif
 - Interface : message d'erreur et identifiants échappés (XSS) ; hôte local seulement (DNS rebinding) ;
   requêtes d'écriture venues d'un autre site refusées ; upload plafonné (`CLIP_MAX_UPLOAD_MO`, 8 Go) ;
   lien http(s) validé avant de créer le dossier du job. Tests de `app.py` ajoutés.
+- Phrase clé vérifiée par le Greffier dans la transcription du clip final : retrouvée -> mots exacts de la
+  transcription et minutage ; sinon `null` et « Phrase clé : INCONNU » sous le statut (le statut global, qui porte
+  sur les 4 tests du Falsificateur, ne change pas). Texte du juge conservé dans `phrase_cle_verification.texte_juge`.
+- « Pourquoi ce moment » étiqueté « avis du juge (IA), non vérifié » (et « donné sur les bornes initiales »
+  quand le Falsificateur a déplacé les bornes).
+- Transcripteur : si un morceau reste vide après 2 passes (musique sur la voix), 3e passe sans VAD qui ne garde
+  que les segments jugés parlés et sûrs ; la relance est écrite dans `vad_relances.json` et sur la carte.
 
 ## 0.2.0 — 2026-11-10
 

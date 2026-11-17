@@ -75,4 +75,4 @@ ruff check .
 - Le Falsificateur est sévère. Un garde-fou lexical rattrape le cas où le clip s'arrête avant la correction de l'orateur.
 - Le recadrage suit le visage dominant (mediapipe). Sans visage, le cadre reste centré. Avant / après : [docs/avant_apres.png](docs/avant_apres.png).
 
-Licence MIT — Copyright (c) 2026 Lhassan Charfa.
+Licence MIT — Copyright (c) 2026 NOVARYS.

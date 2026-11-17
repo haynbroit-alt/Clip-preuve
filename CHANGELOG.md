@@ -42,7 +42,7 @@ Correctifs de fiabilité et de sécurité, sans changer la sélection, le Falsif
 
 Outillage d'un dépôt open source, sans changer la sélection ni le Falsificateur.
 
-- README français, schéma des agents, licence MIT (Lhassan Charfa).
+- README français, schéma des agents, licence MIT (NOVARYS).
 - pytest sans téléchargement de modèle : sélection, piège du Falsificateur, carte de preuve, coût.
 - Contrats pydantic, schéma JSON de la carte (`schemas/preuve.schema.json`), instantanés.
 - Journal JSON sur stderr. Ruff, mypy --strict, couverture de la logique hors entrées-sorties.

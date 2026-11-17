@@ -9,10 +9,10 @@ authors = [{ name = "NOVARYS" }]
 dependencies = [
     "faster-whisper==1.2.1",
     "yt-dlp==2026.10.26",
-    "fastapi==0.162.2",
+    "fastapi==0.163.0",
     "uvicorn==0.54.0",
     "python-multipart==0.0.33",
-    "mediapipe==1.2.2",
+    "mediapipe==1.2.3",
     "opencv-python-headless==5.0.0.93",
     "pydantic==2.14.3",
 ]
@@ -21,8 +21,8 @@ dependencies = [
 dev = [
     "pytest==9.2.0",
     "pytest-cov==7.1.0",
-    "coverage==7.17.2",
-    "ruff==0.17.4",
+    "coverage==7.17.3",
+    "ruff==0.17.5",
     "mypy==2.4.1",
     "jsonschema==4.26.0",
     "pre-commit==4.7.0",

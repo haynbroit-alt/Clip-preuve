@@ -2,12 +2,12 @@
 pydantic==2.14.3
 pytest==9.2.0
 pytest-cov==7.1.0
-coverage==7.17.2
-ruff==0.17.4
+coverage==7.17.3
+ruff==0.17.5
 mypy==2.4.1
 jsonschema==4.26.0
 pre-commit==4.7.0
 # Tests de l'interface web (app.py) : TestClient FastAPI.
-fastapi==0.162.2
+fastapi==0.163.0
 python-multipart==0.0.33
 httpx2==2.16.0

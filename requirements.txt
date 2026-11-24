@@ -1,9 +1,9 @@
 # Versions épinglées. install.sh installe ceci ; la CI de test ne l'installe pas.
 faster-whisper==1.2.1
 yt-dlp==2026.10.26
-fastapi==0.162.2
+fastapi==0.165.0
 uvicorn==0.54.0
-python-multipart==0.0.33
-mediapipe==1.2.2
-opencv-python-headless==5.0.0.93
-pydantic==2.14.3
+python-multipart==0.0.34
+mediapipe==1.2.3
+opencv-python-headless==5.1.0.95
+pydantic==2.14.4
